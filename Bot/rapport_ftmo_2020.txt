@@ -1,0 +1,56 @@
+RAPPORT FTMO 100k — depuis 2020 (GoldFTMO v6.2 EMA+pause)
+Donnees or: 2018-01-02 -> 2026-11-17
+Perte max = pire equity FLOTTANTE incluse (plus bas pendant le trade).
+
+========== RISQUE 1.0% ==========
+Trades: 48 | WR: 50%
+Net 2020->aujourd'hui: +12605 $  (solde 112605)
+Gain moyen / mois: +153 $
+Mois positifs: 21/42
+
+MAX PERTE (avec flottant):
+  Pire equity vs pic:     3.88%
+  Pire equity vs depart:  0.30%
+  Equity mini:            99701 $
+  Breach jour 5%:         NON
+  Breach total 10%:       NON
+  Verdict FTMO pertes:    OK
+
+PASSAGE 2 STEPS (compte separe a chaque phase):
+  Phase 1 (+10%): 2025-10-17
+  Phase 2 (+5%):  pas encore
+
+Sur un seul compte continu (info):
+  Atteint +10%: 2025-10-17
+  Atteint +15%: None
+
+========== RISQUE 1.5% ==========
+Trades: 48 | WR: 50%
+Net 2020->aujourd'hui: +18907 $  (solde 118907)
+Gain moyen / mois: +229 $
+Mois positifs: 21/42
+
+MAX PERTE (avec flottant):
+  Pire equity vs pic:     5.49%
+  Pire equity vs depart:  0.45%
+  Equity mini:            99551 $
+  Breach jour 5%:         NON
+  Breach total 10%:       NON
+  Verdict FTMO pertes:    OK
+
+PASSAGE 2 STEPS (compte separe a chaque phase):
+  Phase 1 (+10%): 2025-04-02
+  Phase 2 (+5%):  2025-12-22
+  Finance le: 2025-12-22
+
+Sur un seul compte continu (info):
+  Atteint +10%: 2025-04-02
+  Atteint +15%: 2025-10-17
+
+========== CALIBRAGE AVEC TON MT5 ==========
+Ton test MT5 @1% (sans ces filtres): +18342$ ~ 237$/mois | DD equity 2.89%
+Ton test MT5 @4.5%: DD 16% = ECHEC
+Formule pratique retenue:
+  risque = 1.0%  => ~200 a 250 $/mois sur 100k (ordre de grandeur MT5)
+  risque = 1.5%  => ~300 a 370 $/mois estime, DD a surveiller <10%
+  500$/mois sur 100k: non garanti a risque safe; viser 200k @1% ou accepter ~250$/mois

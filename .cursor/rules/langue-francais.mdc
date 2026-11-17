@@ -1,0 +1,10 @@
+---
+description: Repondre toujours en francais
+alwaysApply: true
+---
+
+# Langue
+
+Toujours repondre en francais, dans le chat et dans les explications.
+Les commentaires de code et les messages Print du robot peuvent rester en francais (comme le projet actuel).
+Ne pas passer au vietnamien ni a une autre langue sauf demande explicite de l'utilisateur.

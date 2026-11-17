@@ -1,0 +1,37 @@
+COMPARAISON TIMEFRAMES — meme logique FTMO (risque 1%, 1 position)
+Objectif: viser ~1 trade / 1-2 jours sans bruler 5%/10%
+
+=== 1d | 2020-01-14 05:00:00+00:00 -> 2026-11-17 05:00:00+00:00 | 1724 barres ===
+  Trades: 46 | WR 50% | net +11492$ | ~/mois +140$
+  Rythme: 0.02 trade/jour | 1 trade tous les ~54.3 jours
+  Jours avec trade: 46 | jours >1 trade: 0
+  Duree (barres TF): min 0 | med 6 | max 15
+  DD pic 3.9% | DD init 1.4% | FTMO pertes: ECHEC
+
+=== 1h | 2024-12-18 17:00:00+00:00 -> 2026-11-17 16:57:06+00:00 | 11000 barres ===
+  Trades: 243 | WR 42% | net +9271$ | ~/mois +404$
+  Rythme: 0.35 trade/jour | 1 trade tous les ~2.9 jours
+  Jours avec trade: 223 | jours >1 trade: 20
+  Duree (barres TF): min 0 | med 7 | max 15
+  DD pic 11.8% | DD init 0.4% | FTMO pertes: ECHEC
+
+=== 30m | 2026-09-20 22:00:00+00:00 -> 2026-11-17 16:57:06+00:00 | 1925 barres ===
+  Trades: 25 | WR 24% | net -4897$ | ~/mois -2570$
+  Rythme: 0.43 trade/jour | 1 trade tous les ~2.3 jours
+  Jours avec trade: 20 | jours >1 trade: 5
+  Duree (barres TF): min 1 | med 8 | max 15
+  DD pic 7.4% | DD init 6.8% | FTMO pertes: ECHEC
+
+=== 15m | 2026-09-20 22:00:00+00:00 -> 2026-11-17 16:57:06+00:00 | 3844 barres ===
+  Trades: 61 | WR 39% | net -992$ | ~/mois -520$
+  Rythme: 1.05 trade/jour | 1 trade tous les ~1.0 jours
+  Jours avec trade: 33 | jours >1 trade: 18
+  Duree (barres TF): min 0 | med 7 | max 15
+  DD pic 11.1% | DD init 6.6% | FTMO pertes: ECHEC
+
+=== VERDICT ===
+D1: trop lent pour 1 trade/1-2j
+H1: meilleur candidat pour densifier sans scalping extrême
+M15/M30: plus de trades, plus de spread/bruit — DD souvent pire
+Regle: 1 position max + risque 1% => meme si 1 trade/jour, 1 perte/jour = 1% << 5%
+Danger: enchaine plusieurs pertes/semaine => grignote les 10%

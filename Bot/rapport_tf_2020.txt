@@ -1,0 +1,70 @@
+RAPPORT TF COURTS — depuis 2020 (GoldFTMO v6.3 logique)
+Compte 100k | risque 1% | 1 position | EMA50 + pause 2 pertes / 8j
+Cassure 20 / sortie 10 / SL 2 ATR / partielle 1R 50% / lock 2R / TP 2R mini
+Source: MetaTrader5 XAUUSD (pas Yahoo)
+
+=== D1 (reference) | 2020-01-02 -> 2026-11-17 | 1776 barres ===
+  Trades: 47 | WR 60% | gain moy +1097$ | perte moy -653$
+  Net depuis 2020: +18312$ (solde 118312) | ~/mois +222$
+  Rythme: 0.02 trade/jour | 1 trade tous les ~53.4 jours
+  Jours avec trade: 47 | jours >1 trade: 0
+  Duree: min 0.0h | med 192.0h | max 408.0h
+  DD pic 2.8% | DD vs capital 0.9% | pire flottant -868$
+  Plafond jour touche: non | plafond -10%: non | FTMO pertes: OK
+  Premier +10% (challenge step1): 2025-02-12
+  Par annee:
+    2020: 6 trades | WR 50% | PnL +1971$
+    2021: 4 trades | WR 75% | PnL +1519$
+    2022: 6 trades | WR 50% | PnL +614$
+    2023: 9 trades | WR 44% | PnL -189$
+    2024: 8 trades | WR 62% | PnL +4505$
+    2025: 11 trades | WR 73% | PnL +8105$
+    2026: 3 trades | WR 67% | PnL +1786$
+  Mois +: 27 | mois -: 15
+
+=== H1 (densifie) | 2020-01-02 -> 2026-11-17 | 40492 barres ===
+  Trades: 155 | WR 34% | gain moy +1064$ | perte moy -628$
+  Net depuis 2020: -9359$ (solde 90641) | ~/mois -113$
+  Rythme: 0.06 trade/jour | 1 trade tous les ~16.2 jours
+  Jours avec trade: 140 | jours >1 trade: 14
+  Duree: min 0.0h | med 6.0h | max 87.0h
+  DD pic 14.4% | DD vs capital 9.6% | pire flottant -9588$
+  Plafond jour touche: non | plafond -10%: non | FTMO pertes: OK
+  Premier +10%: jamais atteint sur la periode
+  Par annee:
+    2020: 81 trades | WR 36% | PnL -222$
+    2021: 72 trades | WR 32% | PnL -7477$
+    2022: 2 trades | WR 0% | PnL -1660$
+  Mois +: 9 | mois -: 16
+
+=== M30 | 2020-01-02 -> 2026-11-17 | 80938 barres ===
+  Trades: 50 | WR 26% | gain moy +1035$ | perte moy -613$
+  Net depuis 2020: -9220$ (solde 90780) | ~/mois -112$
+  Rythme: 0.02 trade/jour | 1 trade tous les ~50.2 jours
+  Jours avec trade: 37 | jours >1 trade: 12
+  Duree: min 0.0h | med 2.0h | max 55.0h
+  DD pic 10.7% | DD vs capital 10.1% | pire flottant -10104$
+  Plafond jour touche: non | plafond -10%: OUI | FTMO pertes: ECHEC
+  Premier +10%: jamais atteint sur la periode
+  Par annee:
+    2020: 50 trades | WR 26% | PnL -9220$
+  Mois +: 2 | mois -: 5
+
+=== M15 | 2020-01-02 -> 2026-11-17 | 161827 barres ===
+  Trades: 47 | WR 30% | gain moy +1009$ | perte moy -730$
+  Net depuis 2020: -9975$ (solde 90025) | ~/mois -121$
+  Rythme: 0.02 trade/jour | 1 trade tous les ~53.4 jours
+  Jours avec trade: 29 | jours >1 trade: 12
+  Duree: min 0.0h | med 1.0h | max 55.2h
+  DD pic 12.9% | DD vs capital 10.2% | pire flottant -10179$
+  Plafond jour touche: non | plafond -10%: OUI | FTMO pertes: ECHEC
+  Premier +10%: jamais atteint sur la periode
+  Par annee:
+    2020: 47 trades | WR 30% | PnL -9975$
+  Mois +: 0 | mois -: 5
+
+=== VERDICT ===
+Meilleur net: D1 (reference) (+18312$)
+Aucun TF n'atteint vraiment 1 trade / 1-2 jours ET un net solide.
+Rappel: plus le TF est court, plus le meme N=20 devient 'micro-cassure' (plus de trades, plus de faux signaux).
+Sous plafonds pertes FTMO + net > 0: D1 (reference)

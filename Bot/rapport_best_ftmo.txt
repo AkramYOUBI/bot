@@ -1,0 +1,29 @@
+MEILLEUR FTMO 2020+ — MT5 XAUUSD, OHLC pessimiste (SL gagne si conflit)
+Regles: -5% jour / -10% total sur capital INITIAL 100k | 1 position
+
+PHOTO +13M / WR93% / 10k depot:
+  Rejetee comme cible. Hors FTMO (compounding + perte moy >> gain moy).
+
+Configs testees: 350 | OK+profit: 333
+
+=== TOP 12 ===
+D1_e20x10_sl1.8_r1.50_rr2.0_ema1_cap0.0: net +36985$ | ~/m +448$ | n=47 WR68% B47/S0 | DD 0.9% | 1/53.4j | OK | +10% 2023-03-14
+D1_e20x10_sl1.8_r1.50_rr2.0_ema1_cap2.2: net +36985$ | ~/m +448$ | n=47 WR68% B47/S0 | DD 0.9% | 1/53.4j | OK | +10% 2023-03-14
+D1_e15x8_sl2.0_r1.50_rr2.5_ema0_cap0.0: net +35646$ | ~/m +432$ | n=52 WR60% B52/S0 | DD 0.4% | 1/48.3j | OK | +10% 2023-03-13
+D1_e15x8_sl2.0_r1.50_rr2.5_ema0_cap2.2: net +35646$ | ~/m +432$ | n=52 WR60% B52/S0 | DD 0.4% | 1/48.3j | OK | +10% 2023-03-13
+D1_e15x8_sl1.8_r1.50_rr2.0_ema0_cap0.0: net +35203$ | ~/m +427$ | n=54 WR59% B54/S0 | DD 0.7% | 1/46.5j | OK | +10% 2024-03-01
+D1_e15x8_sl1.8_r1.50_rr2.0_ema0_cap2.2: net +35203$ | ~/m +427$ | n=54 WR59% B54/S0 | DD 0.7% | 1/46.5j | OK | +10% 2024-03-01
+D1_e15x8_sl1.8_r1.50_rr2.5_ema0_cap0.0: net +35075$ | ~/m +425$ | n=54 WR59% B54/S0 | DD 0.7% | 1/46.5j | OK | +10% 2023-01-04
+D1_e15x8_sl1.8_r1.50_rr2.5_ema0_cap2.2: net +35075$ | ~/m +425$ | n=54 WR59% B54/S0 | DD 0.7% | 1/46.5j | OK | +10% 2023-01-04
+D1_e15x8_sl1.8_r1.50_rr2.0_ema1_cap0.0: net +34874$ | ~/m +423$ | n=51 WR63% B51/S0 | DD 0.7% | 1/49.2j | OK | +10% 2023-01-04
+D1_e15x8_sl1.8_r1.50_rr2.0_ema1_cap2.2: net +34874$ | ~/m +423$ | n=51 WR63% B51/S0 | DD 0.7% | 1/49.2j | OK | +10% 2023-01-04
+D1_e20x10_sl1.8_r1.50_rr2.5_ema1_cap0.0: net +34809$ | ~/m +422$ | n=48 WR67% B48/S0 | DD 0.9% | 1/52.3j | OK | +10% 2023-01-04
+D1_e20x10_sl1.8_r1.50_rr2.5_ema1_cap2.2: net +34809$ | ~/m +422$ | n=48 WR67% B48/S0 | DD 0.9% | 1/52.3j | OK | +10% 2023-01-04
+
+RETENU: D1_e20x10_sl1.8_r1.50_rr2.0_ema1_cap0.0
+  Net +36985$ | ~/mois +448$ | WR 68% | DD 0.9% | 47 trades | 1/53.4j
+  Challenge: +5% 2021-04-22 | +10% 2023-03-14
+PLUS RAPIDE +10%: H1L_e36x18_sl2.2_r1.0_rr2.0 le 2020-04-13 (net +21829$ DD 2.5%)
+
+PARAMS EA GoldFTMO.mq5 a utiliser:
+  -> D1_e20x10_sl1.8_r1.50_rr2.0_ema1_cap0.0

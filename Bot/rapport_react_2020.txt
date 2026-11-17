@@ -1,0 +1,39 @@
+OPTIMISATION BUY+SELL REACTIVE — XAUUSD H1 depuis 2020 (MT5)
+FTMO: -5% jour / -10% total | 1 position | capital 100k
+Cible style: ~30 points, buy ET sell, reactif
+
+NOTE PHOTO +13M / WR 93%:
+  Impossible sous FTMO reel avec fills realistes.
+  DD$ 284k sur depot 10k = levier/compounding hors challenge.
+  Perte moy 3x gain moy + WR 93% = profil type martingale/curve-fit.
+  Ici: risque fixe % du capital INITIAL + plafonds durs.
+
+Configs testees: 208
+
+--- TOP 15 (FTMO pertes OK prioritaires) ---
+brk_lb20_tp25_sl2.0_r1.0_ema1: net +58628$ | ~/m +711$ | trades 1128 (B642/S486) | WR 55% | 1/2.2j | DD 0.1% | FTMO OK | +10% 2020-04-06
+brk_lb8_tp50_sl1.5_r1.0_ema1: net +55210$ | ~/m +669$ | trades 944 (B531/S413) | WR 53% | 1/2.7j | DD 2.0% | FTMO OK | +10% 2021-08-16
+brk_lb20_tp30_sl2.0_r1.0_ema1: net +54823$ | ~/m +665$ | trades 1008 (B556/S452) | WR 53% | 1/2.5j | DD 2.7% | FTMO OK | +10% 2020-04-09
+brk_lb20_tp25_sl2.0_r1.0_ema0: net +54259$ | ~/m +658$ | trades 1139 (B649/S490) | WR 55% | 1/2.2j | DD 2.3% | FTMO OK | +10% 2020-04-13
+brk_lb20_tp30_sl2.0_r1.0_ema0: net +51677$ | ~/m +626$ | trades 1019 (B560/S459) | WR 53% | 1/2.5j | DD 4.7% | FTMO OK | +10% 2020-04-13
+brk_lb8_tp30_sl2.0_r1.0_ema1: net +46426$ | ~/m +563$ | trades 1140 (B629/S511) | WR 53% | 1/2.2j | DD 7.8% | FTMO OK | +10% 2021-01-08
+brk_lb8_tp30_sl1.0_r0.5_ema0: net +40766$ | ~/m +494$ | trades 1289 (B713/S576) | WR 53% | 1/1.9j | DD 7.7% | FTMO OK | +10% 2024-05-22
+brk_lb12_tp50_sl1.0_r1.0_ema1: net +40321$ | ~/m +489$ | trades 873 (B477/S396) | WR 52% | 1/2.9j | DD 0.8% | FTMO OK | +10% 2020-08-07
+brk_lb8_tp40_sl1.0_r1.0_ema0: net +38500$ | ~/m +467$ | trades 1085 (B599/S486) | WR 52% | 1/2.3j | DD 8.8% | FTMO OK | +10% 2025-02-17
+brk_lb16_tp25_sl2.0_r1.0_ema1: net +36238$ | ~/m +439$ | trades 1183 (B661/S522) | WR 54% | 1/2.1j | DD 8.9% | FTMO OK | +10% 2020-04-09
+brk_lb8_tp40_sl1.0_r0.5_ema1: net +35860$ | ~/m +435$ | trades 1047 (B592/S455) | WR 53% | 1/2.4j | DD 3.7% | FTMO OK | +10% 2025-04-22
+brk_lb20_tp50_sl1.0_r1.0_ema1: net +33439$ | ~/m +405$ | trades 806 (B452/S354) | WR 51% | 1/3.1j | DD 1.4% | FTMO OK | +10% 2021-06-30
+brk_lb12_tp50_sl2.0_r1.0_ema1: net +33417$ | ~/m +405$ | trades 879 (B485/S394) | WR 51% | 1/2.9j | DD 1.4% | FTMO OK | +10% 2025-02-07
+brk_lb8_tp50_sl2.0_r1.0_ema1: net +32932$ | ~/m +399$ | trades 903 (B509/S394) | WR 51% | 1/2.8j | DD 7.8% | FTMO OK | +10% 2025-05-23
+brk_lb12_tp30_sl2.0_r0.5_ema1: net +30943$ | ~/m +375$ | trades 1099 (B597/S502) | WR 53% | 1/2.3j | DD 6.4% | FTMO OK | +10% 2025-04-07
+
+Configs FTMO OK + net>0: 73 / 208
+MEILLEUR: brk_lb20_tp25_sl2.0_r1.0_ema1
+  net +58628$ | WR 55% | rythme 1/2.2j | DD 0.1%
+
+Plus proches de 1 trade / 1-2 jours (parmi OK+profit):
+  brk_lb8_tp25_sl2.0_r0.5_ema0: 1/1.8j | net +7431$ | WR 54% | DD 5.2%
+  brk_lb8_tp25_sl2.0_r0.5_ema1: 1/1.9j | net +21690$ | WR 55% | DD 5.9%
+  brk_lb8_tp30_sl1.0_r0.5_ema0: 1/1.9j | net +40766$ | WR 53% | DD 7.7%
+  brk_lb8_tp30_sl2.0_r0.5_ema0: 1/2.0j | net +22292$ | WR 53% | DD 5.8%
+  brk_lb16_tp25_sl2.0_r0.5_ema0: 1/2.0j | net +10433$ | WR 53% | DD 3.7%

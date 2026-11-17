@@ -1,0 +1,64 @@
+GOLD FTMO — ETAT AU 17 NOV 2026
+
+ECHEC v4 (multi-TF long+short H4/H1/M5)
+- Test ~2020 : pic ~104k puis chute a ~90k = plafond -10 % touche
+- Robot coupe (courbe plate ensuite) : il a respecte le -10 %, mais la logique a perdu
+- Cause : vente+achat sur or en crise de volatilite (2020). Trop de faux signaux
+
+ROBOT ACTUEL v5 (GoldFTMO.mq5) — COMPILE 0 erreur
+- Or, ACHAT SEULEMENT, cassure 20 jours, stop/trail 2 ATR, sortie sous 10 jours
+- C'est le seul systeme du dossier deja positif sur 20 ans (MT5 + Python)
+- Risque 1 % / trade (plus bas que l'ancien 2 %)
+- Filtre ATR : refuse si volatilite > 2.2 x moyenne (protege contre mars 2020)
+- PAS d'arret sur le gain
+- Plafonds seuls : -5 % jour, -10 % total
+
+TEST A FAIRE
+- XAUUSD D1, meme periode que ton graphe (2020+)
+- Si ca re-brule : on arrete cette piste, on ne grossit JAMAIS le lot
+
+=== ECHELLE PLUS PETITE (17 Nov 2026) ===
+Meme logique Turtle achat seul + risque 1% + EMA + pause 2 pertes.
+Objectif: ~1 trade / 1-2 jours sous plafonds FTMO 5%/10%.
+
+RESULTATS Yahoo GC=F (proxy):
+- D1 2020-2026: 46 trades | 1 trade / ~54j | +11500$ | DD init ~1.4% | lent
+- H1 ~1 an: 243 trades | 1 trade / ~2.9j | +9300$ (~+400$/mois) | DD pic ~12% | candidat
+- M30 ~2 mois: 25 trades | 1 / ~2.3j | -4900$ | bruit
+- M15 ~2 mois: 61 trades | ~1 / jour | -990$ | trop de faux breakouts
+
+VERDICT:
+- Oui on peut densifier: H1 est le meilleur compromis (~1 trade / 2-3 jours).
+- M15/M30 augmentent la frequence mais detruisent l edge (spread + bruit).
+- GoldFTMO v6.3: input InpTF (defaut D1). Pour densifier: InpTF=H1, EntryBars=20, risque 1%.
+- Sur H1: 1 position max => 1 perte/jour = 1% << 5% daily. Danger = serie de pertes => 10%.
+- Recompile dans MetaEditor avant testeur H1.
+
+=== RAPPORT MT5 XAUUSD 2020+ (TF courts, v6.3) ===
+D1: +18312$ | ~1 trade/53j | DD 0.9% | FTMO pertes OK | seul TF rentable
+H1: -9359$ | ~1 trade/16j puis compte gele ~-9.6% | WR 34% | pas de +10%
+M30: -9220$ | touche -10% en 2020 | ECHEC
+M15: -9975$ | touche -10% en 2020 | ECHEC
+Fichier: rapport_tf_2020.txt
+
+=== GoldFTMO_React v1 (17 Nov 2026) ===
+Buy+Sell H1 cassure lb12 / TP30 / SL1.8ATR / risk1% / EMA off
+MT5 2020+: +43701$ | WR53% | ~1 trade/2.1j | DD4.7% | FTMO pertes OK
+Alternative plus safe: lb8 TP40 EMA on -> +38661$ DD0.3%
+Photo +13M NON reproductible sous FTMO.
+Fichiers: GoldFTMO_React.mq5 + rapport_react_2020.txt
+
+=== CORRECTION React (17 Nov soir) ===
+MT5 utilisateur: -9125$ | WR35% | DD peak 18% | halt ~90k = FTMO -10% initial OK coupe.
+Cause ecart: simu Python OHLC trop optimiste (TP compté trop souvent).
+Revalidation pessimiste: config actuelle ~-9420$ = aligne MT5.
+H1 buy+sell cassure NE PAS utiliser pour challenge.
+Revenir a GoldFTMO.mq5 D1 achat seul.
+
+=== BEST FTMO SEARCH (17 Nov soir) ===
+350 configs, OHLC pessimiste, plafonds durs.
+RETENU: D1 e20/x10 SL1.8ATR risk1.5% TP2R EMA on
+  +36985$ | +448$/mois | WR68% | DD0.9% | +10% le 2023-03-14
+PLUS RAPIDE +10%: H1 long-only e36/x18 SL2.2 risk1% TP2R -> +10% 2020-04-13 net +21829$ DD2.5%
+Photo +13M: rejetee (hors FTMO).
+GoldFTMO.mq5 defaults aligns: risk 1.5, SL 1.8, D1, buy only.

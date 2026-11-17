@@ -1,0 +1,74 @@
+FORMULE FTMO 100k — GoldFTMO
+Dossier vf NON touche. Bot mis a jour v6.2 (EMA50 + pause 2 pertes) — compile 0 erreur.
+
+============================================================
+1) CE QUE TES TESTS MT5 ONT MONTRE (la verite terrain)
+============================================================
+Risque 1.0%  : +18 342 $ | DD equity 2.89% | ~/mois ~237 $ | SAFE FTMO
+Risque 4.5%  : +37 236 $ | DD equity 16.2% | DD balance 14.9% | ECHEC FTMO (>10%)
+Jaune 2022-23: fausses cassures or en range — serie de stops a plein risque
+
+============================================================
+2) FORMULE RISQUE (regles FTMO)
+============================================================
+Plafond jour  = 5%  = 5 000 $ sur 100k
+Plafond total = 10% = 10 000 $ sur 100k
+
+Risque_$ = Capital * risque%
+
+Contrainte jour (1 trade)     : risque%  <  5%
+Contrainte jour (2 trades)    : risque%  <= 2.0%   (2 x risque < 5%)
+Contrainte total (3 pertes)   : risque%  <= 2.5%   (3 x risque < 10% + marge)
+Avec pause apres 2 pertes     : risque%  <= 2.0%   (recommandé)
+
+FORMULE RETENUE POUR PASSER FTMO 100k SANS BRULER :
+  risque% = 1.0%  a  1.5%
+  Risque_$ = 1000$ a 1500$ par trade
+  Filtres ON : EMA50 haussiere + pause 8 jours apres 2 pertes
+
+============================================================
+3) FORMULE GAIN
+============================================================
+Gain_mois_approx = (net_historique / mois_testes)
+
+D apres TON MT5 a 1% :
+  Gain_mois ~= 237 $ sur 100k
+
+Pour viser 500 $/mois au MEME profil de risque :
+  Capital_besoin ~= 500 / 237 * 100000 ~= 211 000 $
+  => compte FTMO 200k a 1%, ou 100k a ~2% (plus proche de la ligne rouge)
+
+Scaling (si le DD reste proportionnel — attention ce n est pas garanti) :
+  Gain_mois(r) ~= 237 * (r / 1.0)
+  DD_approx(r) ~= 2.89% * (r / 1.0)
+  Pour DD_approx < 8%  => r < 8/2.89 ~= 2.8%
+  Pour DD_approx < 10% => r < 10/2.89 ~= 3.5%
+  MAIS a 4.5% ton DD a ete 16% : le scaling casse en range.
+  Donc plafond pratique : 1.5% max pour FTMO.
+
+============================================================
+4) REGLAGES FINAUX A METTRE DANS LE TESTEUR
+============================================================
+Capital              100000
+Risque par trade %   1.0     (challenge)   /  1.5 (si tu acceptes plus de trou)
+Plafond jour %       5.0
+Plafond total %      10.0
+UseEma               true
+PauseLoss            2
+PauseDays            8
+PartialR             1.0
+PartialPct           50
+LockR                2.0
+LockUSD              800
+
+Une fois FINANCE et si tu veux ~500$/mois :
+  option A : meme bot sur compte 200k a 1%
+  option B : 100k a 1.5% (pas 4.5%)
+
+============================================================
+5) CE QUI A ETE FAIT DANS LE CODE (Bot/GoldFTMO.mq5 v6.2)
+============================================================
++ Filtre EMA50 D1 (prix au-dessus + EMA qui monte)
++ Pause 8 jours apres 2 pertes d affilee
+= ca cible exactement la zone jaune 2022-2023
+Relance le meme test 2020-2026 a risque 1.0% et 1.5% pour confirmer.

@@ -1,0 +1,15 @@
+VALIDATION REALISTE (OHLC pessimiste: conflit SL/TP -> SL)
+Compare a ton MT5: -9125$, WR35%, DD~18% peak, halt ~90k
+
+ACTUEL_user_lb12_tp30_sl1.8_r1_ema0: net -9420$ | bal 90580 | WR 47% | n=361 B200/S161 | DD 9.6% | 1/7.0j | FAIL
+SAFE_lb20_tp1.5R_sl2_r0.5_ema1: net -9548$ | bal 90452 | WR 49% | n=484 B273/S211 | DD 9.6% | 1/5.2j | FAIL
+SAFE_lb20_tp1.5R_sl2_r1_ema1: net -9031$ | bal 90969 | WR 50% | n=364 B208/S156 | DD 9.4% | 1/6.9j | FAIL
+SAFE_lb12_tp1.5R_sl1.8_r0.5_ema1: net -9608$ | bal 90392 | WR 49% | n=557 B304/S253 | DD 9.9% | 1/4.5j | FAIL
+ALT_lb8_tp40usd_sl1.8_r1_ema1: net -8012$ | bal 91988 | WR 48% | n=705 B366/S339 | DD 10.9% | 1/3.6j | FAIL HALT
+D1style_lb20_tp2R_sl2_r1_ema1: net -9237$ | bal 90763 | WR 48% | n=505 B280/S225 | DD 9.4% | 1/5.0j | FAIL
+
+CONCLUSION:
+- Config ACTUELLE (lb12/TP30$/EMA off) = mauvaise sous fills realistes.
+- En MT5, DD 17% = depuis le PIC (~110k). FTMO regarde l'INITIAL: 100k->~91k = ~-9%.
+- La courbe plate = HaltAll a bien coupe apres plafond.
+- Passer TP en multiple de R + EMA on.
