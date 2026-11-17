@@ -91,3 +91,16 @@ Challenge: 99% reussite, 0 echec, median 357 j (vs ~900-1100 GoldFTMO), MAIS dep
 Finance K1.0: +682$/mois moyen, mois positifs 49%, 2021 -2.4k, 2022 -0.1k, 2025 +28k (tres dependant du regime de l'or)
 Couts x2: 97% / 0 echec / median 519 j / +600$/mois
 Rejetes or: range asiatique, cassures H1, RSI2/IBS or. Multi-marches reste dispo (InpUniverse=1) : 239 j / ~900$/mois.
+
+=== FTMOPortfolio v2.0 — OR ADAPTATIF achat + vente selon regime (17 Nov 2026) ===
+Demande: logique qui marche dans toutes les situations (S/R, tendance, RSI, EMA), pas seulement 2020-2026.
+Donnees or 2007-2026 (bull 2008-11, krach 2013, bear 2013-15, range 2016-18, bull 2019-26).
+Protocole: reglages choisis sur 2008-2015 SEULEMENT, test sur 2016-2026 jamais vu.
+Rejete (teste sur 2008-2015): pullback RSI14/EMA, RSI2 en tendance (~0), achat support/vente resistance en range (negatif),
+  Double-7 (gagnant 2020-26 mais nul 2008-15 = exemple de regle "qui ne marche que ces dernieres annees").
+Retenu: regime D1 (EMA50/EMA200 + pente 10j) -> cassure 20j TP3R, cassure 55j TP2R, momentum 60j vendredi, dans le sens du regime.
+Ventes: +10.4R en 2013, +5.1R en 2015 (la v1.3 achat seul ne passait JAMAIS un challenge demarre 2012-2014; 110 mois sous le sommet).
+Challenge K3.0: 0 echec sur 2008-2026 | DEV median 791 j | TEST 2016-25 median 529 j, 87% reussis (reste en cours)
+Finance K1.25, depart n'importe quel mois: jamais -10% | 67% des annees positives | median ~308$/mois | pire annee -6k
+Fenetres: 1 mois positif ~39% | 3 mois ~52% | 6 mois ~66-70% -> NORMAL pour du suivi de tendance or seul.
+Le multi-marches (InpUniverse=2) reste le plus regulier (73% de mois positifs).

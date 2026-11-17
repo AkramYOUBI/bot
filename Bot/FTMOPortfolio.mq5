@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//| FTMOPortfolio.mq5  v1.3                                          |
+//| FTMOPortfolio.mq5  v2.0                                          |
 //| Portefeuille multi-marches pour challenge FTMO 100k 2-Step       |
 //|  - Tendance  : cassure 20j (logique GoldFTMO) sur Or, WTI, Brent |
 //|  - Crypto    : cassure 20j long, TP 3R sur BTC, ETH              |
@@ -12,7 +12,7 @@
 //| Valide sur Dukascopy H1 bid/ask 2020-2026 (ftmo_lab/).           |
 //+------------------------------------------------------------------+
 #property copyright "FTMO Portfolio"
-#property version   "1.30"
+#property version   "2.00"
 #property strict
 
 #include <Trade/Trade.mqh>
@@ -26,16 +26,17 @@ enum EMode
 
 enum EUniverse
   {
-   UNIV_GOLD  = 0,    // Or seul (XAUUSD) - 4 briques
-   UNIV_MULTI = 1     // Multi-marches - 13 briques
+   UNIV_ADAPT = 0,    // Or adaptatif achat+vente selon regime (XAUUSD) - 3 briques
+   UNIV_GOLD  = 1,    // Or achat seul v2.0 (XAUUSD) - 4 briques
+   UNIV_MULTI = 2     // Multi-marches - 13 briques
   };
 
 input group "=== Mode ==="
-input EUniverse InpUniverse   = UNIV_GOLD;   // Univers (or seul / multi-marches)
+input EUniverse InpUniverse   = UNIV_ADAPT;   // Univers (or seul / multi-marches)
 input EMode  InpMode          = MODE_PHASE1; // Mode
 input double InpCapital       = 100000.0;    // Capital initial du compte
-input double InpKChallenge    = 2.0;         // Multiplicateur risque Phase 1/2 (or 2.0 | multi 2.5)
-input double InpKFunded       = 1.0;         // Multiplicateur risque finance (or 1.0 | multi 0.75)
+input double InpKChallenge    = 3.0;         // Multiplicateur risque Phase 1/2 (adaptatif 3.0 | or 2.0 | multi 2.5)
+input double InpKFunded       = 1.25;        // Multiplicateur risque finance (adaptatif 1.25 | or 1.0 | multi 0.75)
 input double InpTarget1Pct    = 10.0;        // Objectif Phase 1 %
 input double InpTarget2Pct    = 5.0;         // Objectif Phase 2 %
 input int    InpMinDays       = 4;           // Jours de trading minimum FTMO
@@ -44,7 +45,7 @@ input bool   InpStopAtTarget  = true;        // Tout fermer et arreter a l'objec
 input group "=== Protection FTMO ==="
 input double InpDailyGuardPct = 3.5;         // Garde-fou jour % (FTMO = 5)
 input double InpMaxLossPct    = 10.0;        // Perte max totale FTMO %
-input double InpMaxOpenPct    = 5.0;         // Risque ouvert max cumule % (or 5 | multi 8)
+input double InpMaxOpenPct    = 4.0;         // Risque ouvert max cumule % (adaptatif 4 | or 5 | multi 8)
 input double InpDDScalePct    = 6.0;         // Risque reduit lineairement en DD % (or 6 | multi 10)
 input int    InpPragueOffset  = 1;           // Heure serveur - heure Prague (FTMO = 1)
 
@@ -79,6 +80,8 @@ input bool InpUseRSI2 = true;   // RSI(2) indices
 #define T_IBS  3
 #define T_RSI2 4
 #define T_MOM  5
+#define T_RBRK 6   // cassure dans le sens du regime (achat ou vente)
+#define T_RMOM 7   // momentum hebdo dans le sens du regime (achat ou vente)
 
 struct Comp
   {
@@ -92,6 +95,7 @@ struct Comp
    int      maxd;     // jours max
    int      en;       // cassure : N barres entree | momentum : recul N jours
    int      ex;       // cassure : N barres sortie
+   double   be;       // stop ramene a l'entree (+0.1R) des +be R (0 = off)
    long     magic;
    bool     on;
    datetime doneBar;  // derniere bougie D1 traitee
@@ -105,8 +109,8 @@ CTrade trade;
 string gvPrefix;
 string g_log = "";
 
-#define NBARS   260
-#define MINBARS 215
+#define NBARS   1000   // EMA200 : il faut un long historique pour converger
+#define MINBARS 300
 
 //--- etat en memoire (GlobalVariables ecrites seulement quand ca change)
 int    s_day = 0, s_lastTd = 0;
@@ -123,6 +127,7 @@ void AddComp(const string name, const string sym, const int type, const double w
    ArrayResize(C, n + 1);
    C[n].en = en;
    C[n].ex = ex;
+   C[n].be = 0.0;
    C[n].name = name;
    C[n].sym = sym;
    C[n].type = type;
@@ -183,7 +188,16 @@ int OnInit()
    if(InpCapital <= 0.0)
       return INIT_PARAMETERS_INCORRECT;
    ArrayResize(C, 0);
-   if(InpUniverse == UNIV_GOLD)
+   if(InpUniverse == UNIV_ADAPT)
+     {
+      //       nom         symbole  type    poids SL   TP  seuil maxj actif      en  ex
+      AddComp("RBRK20_OR", InpGold, T_RBRK, 1.00, 1.8, 3.0, 0, 15, InpUseBRK, 20, 10);
+      C[ArraySize(C) - 1].be = 1.0;
+      AddComp("RBRK55_OR", InpGold, T_RBRK, 0.70, 1.8, 2.0, 0, 30, InpUseBRK, 55, 20);
+      C[ArraySize(C) - 1].be = 1.0;
+      AddComp("RMOM_OR",   InpGold, T_RMOM, 0.60, 3.0, 0.0, 0,  4, true,      60,  0);
+     }
+   else if(InpUniverse == UNIV_GOLD)
      {
       //       nom        symbole  type   poids SL   TP  seuil maxj actif      en  ex
       AddComp("BRK20_OR", InpGold, T_BRK, 1.00, 1.8, 3.0, 0, 15, InpUseBRK, 20, 10);
@@ -250,7 +264,7 @@ int OnInit()
    g_tester = (bool)MQLInfoInteger(MQL_TESTER) && !(bool)MQLInfoInteger(MQL_VISUAL_MODE);
    trade.SetDeviationInPoints(InpDeviation);
    EventSetTimer(60);   // crypto le week-end : pas de tick sur l'or, le timer prend le relais
-   PrintFormat("FTMOPortfolio v1.3 | mode %s | K %.2f | capital %.0f | %d briques",
+   PrintFormat("FTMOPortfolio v2.0 | mode %s | K %.2f | capital %.0f | %d briques",
                EnumToString(InpMode), K(), InpCapital, ArraySize(C));
    return INIT_SUCCEEDED;
   }
@@ -489,12 +503,34 @@ double Rsi(const MqlRates &r[], const int n, const int per)
 //+------------------------------------------------------------------+
 //| Sortie journaliere (bougie d'hier cloturee)                      |
 //+------------------------------------------------------------------+
-bool ExitSignal(const int i, const MqlRates &r[], const int n)
+//+------------------------------------------------------------------+
+//| Regime D1 : +1 haussier, -1 baissier, 0 neutre                    |
+//| haussier = cloture > EMA200, EMA50 > EMA200, EMA50 monte sur 10j  |
+//+------------------------------------------------------------------+
+int Regime(const MqlRates &r[], const int n)
+  {
+   int d = n - 1;
+   double e50[], e200[];
+   EmaArr(r, n, 50, e50);
+   EmaArr(r, n, 200, e200);
+   double c1 = r[d].close;
+   double slope = e50[d] - e50[d - 10];
+   if(c1 > e200[d] && e50[d] > e200[d] && slope > 0.0) return 1;
+   if(c1 < e200[d] && e50[d] < e200[d] && slope < 0.0) return -1;
+   return 0;
+  }
+
+bool ExitSignal(const int i, const MqlRates &r[], const int n, const int side)
   {
    int d = n - 1;
    double c1 = r[d].close;
    switch(C[i].type)
      {
+      case T_RBRK:
+         if(side > 0) return c1 < LoMin(r, d - C[i].ex, d - 1);
+         return c1 > HiMax(r, d - C[i].ex, d - 1);
+      case T_RMOM:
+         return false;                                  // sortie par le temps (4 jours)
       case T_BRK:
       case T_CRY:
          return c1 < LoMin(r, d - C[i].ex, d - 1);     // cloture sous le plus bas N jours
@@ -513,9 +549,10 @@ bool ExitSignal(const int i, const MqlRates &r[], const int n)
 //+------------------------------------------------------------------+
 //| Entree journaliere : renvoie true si achat + distance du stop    |
 //+------------------------------------------------------------------+
-bool EntrySignal(const int i, const MqlRates &r[], const int n, double &slDist, string &why)
+bool EntrySignal(const int i, const MqlRates &r[], const int n, double &slDist, string &why, int &side)
   {
    int d = n - 1;
+   side = 1;
    double atr[];
    AtrArr(r, n, 20, atr);
    double A = atr[d];
@@ -526,6 +563,36 @@ bool EntrySignal(const int i, const MqlRates &r[], const int n, double &slDist, 
 
    switch(C[i].type)
      {
+      case T_RBRK:
+        {
+         int rg = Regime(r, n);
+         if(rg > 0 && c1 > HiMax(r, d - C[i].en, d - 1) && c2 <= HiMax(r, d - C[i].en - 1, d - 2))
+            side = 1;
+         else if(rg < 0 && c1 < LoMin(r, d - C[i].en, d - 1) && c2 >= LoMin(r, d - C[i].en - 1, d - 2))
+            side = -1;
+         else
+            return false;
+         why = StringFormat("regime %s : cassure %dj %s", rg > 0 ? "HAUSSIER" : "BAISSIER", C[i].en,
+                            side > 0 ? "du plus haut" : "du plus bas");
+         return true;
+        }
+      case T_RMOM:
+        {
+         MqlDateTime bt;
+         TimeToStruct(r[d].time, bt);
+         if(bt.day_of_week != 5)
+            return false;                               // signal a la cloture du vendredi
+         int rg = Regime(r, n);
+         double past = r[d - C[i].en].close;
+         if(rg > 0 && c1 > past)
+            side = 1;
+         else if(rg < 0 && c1 < past)
+            side = -1;
+         else
+            return false;
+         why = StringFormat("regime %s : momentum %dj %.2f vs %.2f", rg > 0 ? "HAUSSIER" : "BAISSIER", C[i].en, c1, past);
+         return true;
+        }
       case T_BRK:
         {
          double avg = 0.0;
@@ -592,20 +659,20 @@ bool EntrySignal(const int i, const MqlRates &r[], const int n, double &slDist, 
   }
 
 //+------------------------------------------------------------------+
-double LotsFor(const string sym, const double price, const double sl, const double riskMoney)
+double LotsFor(const string sym, const ENUM_ORDER_TYPE ot, const double price, const double sl, const double riskMoney)
   {
    double step = SymbolInfoDouble(sym, SYMBOL_VOLUME_STEP);
    double minL = SymbolInfoDouble(sym, SYMBOL_VOLUME_MIN);
    double maxL = SymbolInfoDouble(sym, SYMBOL_VOLUME_MAX);
    double per = 0.0;
-   if(!OrderCalcProfit(ORDER_TYPE_BUY, sym, 1.0, price, sl, per) || per >= 0.0 || step <= 0.0)
+   if(!OrderCalcProfit(ot, sym, 1.0, price, sl, per) || per >= 0.0 || step <= 0.0)
       return 0.0;
    double lots = MathFloor(riskMoney / (-per) / step + 1e-9) * step;
    lots = MathMin(lots, maxL);
    if(lots + 1e-9 < minL)
       return 0.0;
    double margin = 0.0;
-   if(OrderCalcMargin(ORDER_TYPE_BUY, sym, lots, price, margin) &&
+   if(OrderCalcMargin(ot, sym, lots, price, margin) &&
       margin > AccountInfoDouble(ACCOUNT_MARGIN_FREE) * 0.5)
      {
       lots = MathFloor(lots * AccountInfoDouble(ACCOUNT_MARGIN_FREE) * 0.5 / margin / step) * step;
@@ -684,7 +751,8 @@ void Process(const int i, const bool canOpen)
      {
       datetime opened = (datetime)PositionGetInteger(POSITION_TIME);
       int held = iBarShift(C[i].sym, PERIOD_D1, opened, false);
-      if(ExitSignal(i, r, n))
+      int pside = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? 1 : -1;
+      if(ExitSignal(i, r, n, pside))
         {
          if(trade.PositionClose(ticket))
             PrintFormat("%s : sortie signal journalier.", C[i].name);
@@ -704,18 +772,20 @@ void Process(const int i, const bool canOpen)
 
    double slDist = 0.0;
    string why = "";
-   if(!EntrySignal(i, r, n, slDist, why))
+   int side = 1;
+   if(!EntrySignal(i, r, n, slDist, why, side))
       return;
    C[i].nSig++;
 
-   double ask = SymbolInfoDouble(C[i].sym, SYMBOL_ASK);
+   double price = (side > 0) ? SymbolInfoDouble(C[i].sym, SYMBOL_ASK) : SymbolInfoDouble(C[i].sym, SYMBOL_BID);
    int    dg  = (int)SymbolInfoInteger(C[i].sym, SYMBOL_DIGITS);
    double pt  = SymbolInfoDouble(C[i].sym, SYMBOL_POINT);
    double stopLv = SymbolInfoInteger(C[i].sym, SYMBOL_TRADE_STOPS_LEVEL) * pt;
-   if(slDist <= stopLv)
+   if(slDist <= stopLv || price <= 0.0)
       return;
-   double sl = NormalizeDouble(ask - slDist, dg);
-   double tp = C[i].tpR > 0.0 ? NormalizeDouble(ask + slDist * C[i].tpR, dg) : 0.0;
+   double sl = NormalizeDouble(price - side * slDist, dg);
+   double tp = C[i].tpR > 0.0 ? NormalizeDouble(price + side * slDist * C[i].tpR, dg) : 0.0;
+   ENUM_ORDER_TYPE ot = (side > 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
 
    // risque : % du capital initial x K, reduit en drawdown
    double eq = AccountInfoDouble(ACCOUNT_EQUITY);
@@ -735,23 +805,78 @@ void Process(const int i, const bool canOpen)
       return;
      }
 
-   double lots = LotsFor(C[i].sym, ask, sl, riskMoney);
+   double lots = LotsFor(C[i].sym, ot, price, sl, riskMoney);
    if(lots <= 0.0)
      {
       C[i].nLot++;
       PrintFormat("%s : lot trop petit/marge insuffisante pour risque %.0f$.", C[i].name, riskMoney);
       return;
      }
-   if(trade.Buy(lots, C[i].sym, 0.0, sl, tp, C[i].name))
+   bool ok = (side > 0) ? trade.Buy(lots, C[i].sym, 0.0, sl, tp, C[i].name)
+                        : trade.Sell(lots, C[i].sym, 0.0, sl, tp, C[i].name);
+   if(ok)
      {
       CountTradingDay();
       C[i].nTrade++;
-      PrintFormat("ACHAT %s %s %.2f lots | SL %s | TP %s | risque %.0f$ | %s",
+      PrintFormat("%s %s %s %.2f lots | SL %s | TP %s | risque %.0f$ | %s", side > 0 ? "ACHAT" : "VENTE",
                   C[i].name, C[i].sym, lots, DoubleToString(sl, dg), DoubleToString(tp, dg), riskMoney, why);
      }
    else
+     {
       C[i].nRefus++;
-      PrintFormat("%s : achat refuse %s", C[i].name, trade.ResultRetcodeDescription());
+      PrintFormat("%s : ordre refuse %s", C[i].name, trade.ResultRetcodeDescription());
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| Stop ramene a l'entree (+0.1R) des que le gain atteint be x R     |
+//+------------------------------------------------------------------+
+void ManageBE()
+  {
+   for(int i = 0; i < ArraySize(C); i++)
+     {
+      if(!C[i].on || C[i].be <= 0.0)
+         continue;
+      ulong t;
+      if(!SelectComp(i, t))
+         continue;
+      double op = PositionGetDouble(POSITION_PRICE_OPEN);
+      double sl = PositionGetDouble(POSITION_SL);
+      double tp = PositionGetDouble(POSITION_TP);
+      if(sl <= 0.0)
+         continue;
+      bool isBuy = PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY;
+      int  dg = (int)SymbolInfoInteger(C[i].sym, SYMBOL_DIGITS);
+      double gap = SymbolInfoInteger(C[i].sym, SYMBOL_TRADE_STOPS_LEVEL) * SymbolInfoDouble(C[i].sym, SYMBOL_POINT);
+      if(isBuy)
+        {
+         if(sl >= op) continue;                         // deja protege
+         double R = op - sl;
+         double bid = SymbolInfoDouble(C[i].sym, SYMBOL_BID);
+         if(bid - op < C[i].be * R) continue;
+         double nsl = NormalizeDouble(op + 0.1 * R, dg);
+         if(nsl < bid - gap)
+           {
+            trade.SetExpertMagicNumber((ulong)C[i].magic);
+            if(trade.PositionModify(t, nsl, tp))
+               PrintFormat("%s : stop a l'entree (+0.1R) a %s", C[i].name, DoubleToString(nsl, dg));
+           }
+        }
+      else
+        {
+         if(sl <= op) continue;
+         double R = sl - op;
+         double ask = SymbolInfoDouble(C[i].sym, SYMBOL_ASK);
+         if(op - ask < C[i].be * R) continue;
+         double nsl = NormalizeDouble(op - 0.1 * R, dg);
+         if(nsl > ask + gap)
+           {
+            trade.SetExpertMagicNumber((ulong)C[i].magic);
+            if(trade.PositionModify(t, nsl, tp))
+               PrintFormat("%s : stop a l'entree (-0.1R) a %s", C[i].name, DoubleToString(nsl, dg));
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -764,7 +889,7 @@ void Panel()
    if(ms - lastMs < 2000)
       return;
    lastMs = ms;
-   string s = StringFormat("FTMOPortfolio v1.3 | %s | K %.2f\n", EnumToString(InpMode), K());
+   string s = StringFormat("FTMOPortfolio v2.0 | %s | K %.2f\n", EnumToString(InpMode), K());
    double eq = AccountInfoDouble(ACCOUNT_EQUITY);
    s += StringFormat("Equity %.0f (%.2f %%) | jour ref %.0f | jours trading %.0f\n",
                      eq, (eq / InpCapital - 1.0) * 100.0, s_dayBal, s_tdays);
@@ -781,7 +906,8 @@ void Panel()
         {
          st = "attente";
          if(SelectComp(i, t))
-            st = StringFormat("EN POSITION %.0f$", PositionGetDouble(POSITION_PROFIT));
+            st = StringFormat("%s %.0f$", PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY ? "ACHAT" : "VENTE",
+                              PositionGetDouble(POSITION_PROFIT));
         }
       s += StringFormat("  %-11s %-11s %s\n", C[i].name, C[i].sym, st);
      }
@@ -796,6 +922,7 @@ void Run()
       Panel();
       return;
      }
+   ManageBE();
    for(int i = 0; i < ArraySize(C); i++)
       Process(i, ok);
    Panel();

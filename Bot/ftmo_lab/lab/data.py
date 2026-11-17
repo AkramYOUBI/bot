@@ -12,7 +12,7 @@ DATA = "/data"
 
 # Couts aller-retour en unites de prix (spread FTMO typique + commission + marge de securite)
 COST = {
-    "xauusd": 0.35, "xagusd": 0.035,
+    "xauusd": 0.35, "xaulong": 0.35, "xagusd": 0.035,
     "usa500idxusd": 0.6, "usatechidxusd": 2.0, "usa30idxusd": 3.0,
     "deuidxeur": 2.0, "gbridxgbp": 1.5, "jpnidxjpy": 12.0,
     "eurusd": 0.00012, "gbpusd": 0.00016, "audusd": 0.00014, "nzdusd": 0.00018,
@@ -21,7 +21,7 @@ COST = {
     "usdcad": 0.00018, "usdchf": 0.00018, "usdjpy": 0.014, "eurjpy": 0.02, "gbpjpy": 0.028,
 }
 # Si donnees ask dispo : seulement commission/glissement en plus du spread reel
-EXTRA = {"btcusd": 15.0, "ethusd": 1.0, "lightcmdusd": 0.01, "brentcmdusd": 0.01, "hkgidxhkd": 2.0,
+EXTRA = {"xaulong": 0.10, "btcusd": 15.0, "ethusd": 1.0, "lightcmdusd": 0.01, "brentcmdusd": 0.01, "hkgidxhkd": 2.0,
          "xauusd": 0.10, "usa500idxusd": 0.1, "usatechidxusd": 0.4, "usa30idxusd": 0.6, "deuidxeur": 0.4}
 # Nom FTMO MT5
 FTMO_NAME = {

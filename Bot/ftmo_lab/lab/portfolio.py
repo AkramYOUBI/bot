@@ -24,7 +24,8 @@ def build(comps):
     tb = TradeBook(tl)
     for sid, (name, fn, kw, sym) in enumerate(comps):
         I = load(sym)
-        for res, side, d in fn(I, **kw):
+        for t in fn(I, **kw):
+            res, side = t[0], t[1]
             tb.add(sid, I, res, side, name)
     tb.pack()
     return tl, tb

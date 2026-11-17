@@ -366,3 +366,168 @@ def tsmom_w(I: Inst, look=60, sl=3.0, hold_days=4):
         return run_trade(I, i0, side, A[d] * sl, 0.0, None, hold_days * 23 + 12)
 
     return _daily_loop(I, sig, mk, look + 5)
+
+
+# ================================================================ 13) LOGIQUE ADAPTATIVE OR (regime + S/R + RSI + EMA)
+def _pivots(h, l, k=3):
+    """Pivots fractals confirmes : le pivot en j n'est connu qu'a j+k (pas de regard futur)."""
+    n = len(h)
+    ph = np.full(n, np.nan); pl = np.full(n, np.nan)
+    for j in range(k, n - k):
+        if h[j] == h[j - k:j + k + 1].max():
+            ph[j + k] = h[j]
+        if l[j] == l[j - k:j + k + 1].min():
+            pl[j + k] = l[j]
+    return ph, pl
+
+
+def regime_arrays(I: Inst, slope_n=10):
+    c = I.dc
+    E50, E200 = ema(c, 50), ema(c, 200)
+    sl = np.zeros(len(c)); sl[slope_n:] = E50[slope_n:] - E50[:-slope_n]
+    up = (c > E200) & (E50 > E200) & (sl > 0)
+    dn = (c < E200) & (E50 < E200) & (sl < 0)
+    reg = np.where(up, 1, np.where(dn, -1, 0))
+    return reg, E50, E200
+
+
+def adaptive(I: Inst, setup="pullback", look_sr=120, k_piv=3, rr=2.0, maxd=15, be_r=1.0,
+             rsi_pb=40, rsi_rng=35, sr_tol=0.5, brk_en=20, brk_ex=10, brk_rr=3.0, sides=(1, -1)):
+    c, h, l, o = I.dc, I.dh, I.dl, I.do
+    A = atr(h, l, c, 20)
+    R14 = rsi(c, 14)
+    E20 = ema(c, 20)
+    reg, E50, E200 = regime_arrays(I)
+    ph, pl = _pivots(h, l, k_piv)
+    H = hhv(h, brk_en); L = llv(l, brk_en); XL = llv(l, brk_ex); XH = hhv(h, brk_ex)
+    nD = len(c)
+    exL = np.zeros(nD, bool); exS = np.zeros(nD, bool)
+    exL[1:] = c[1:] < XL[:-1]; exS[1:] = c[1:] > XH[:-1]
+    fL, fS = _daily_flag(I, exL), _daily_flag(I, exS)
+    out = []
+    busy = -1
+    for d in range(260, nD - 1):
+        i0 = _entry_bar(I, d + 1)
+        if i0 <= busy or not A[d] > 0:
+            continue
+        a = A[d]
+        # supports / resistances confirmes sur look_sr jours
+        lo_w = max(0, d - look_sr)
+        ph_w = ph[lo_w:d + 1]; pl_w = pl[lo_w:d + 1]
+        res_above = ph_w[ph_w > c[d]]; sup_below = pl_w[pl_w < c[d]]
+        R = res_above.min() if res_above.size else np.nan
+        Sp = sup_below.max() if sup_below.size else np.nan
+        side, sld, tpr, flag, mx = 0, 0.0, rr, None, maxd
+        if setup == "pullback" and reg[d] != 0:
+            s = reg[d]
+            if s in sides:
+                rmin = R14[d - 3:d + 1].min() if s > 0 else R14[d - 3:d + 1].max()
+                touched = (l[d - 3:d + 1].min() <= max(E50[d], E20[d]) + sr_tol * a) if s > 0 else \
+                          (h[d - 3:d + 1].max() >= min(E50[d], E20[d]) - sr_tol * a)
+                confirm = (c[d] > h[d - 1]) if s > 0 else (c[d] < l[d - 1])
+                rsi_ok = (rmin < rsi_pb) if s > 0 else (rmin > 100 - rsi_pb)
+                if touched and confirm and rsi_ok:
+                    ext = l[d - 3:d + 1].min() if s > 0 else h[d - 3:d + 1].max()
+                    sld = min(max(abs(c[d] - ext) + 0.5 * a, 1.0 * a), 3.0 * a)
+                    side = s
+        elif setup == "breakout" and reg[d] != 0:
+            s = reg[d]
+            if s in sides:
+                if s > 0 and c[d] > H[d - 1] and c[d - 1] <= H[d - 2]:
+                    side = 1
+                elif s < 0 and c[d] < L[d - 1] and c[d - 1] >= L[d - 2]:
+                    side = -1
+                if side:
+                    sld, tpr, flag, mx = 1.8 * a, brk_rr, (fL if side > 0 else fS), maxd
+        elif setup == "range" and reg[d] == 0 and Sp == Sp and R == R and (R - Sp) > 3 * a:
+            # achat sur support / vente sur resistance, RSI extreme + bougie de rejet
+            if 1 in sides and l[d] <= Sp + sr_tol * a and R14[d] < rsi_rng + 10 and c[d] > o[d] and c[d] > Sp:
+                side, sld = 1, (c[d] - Sp) + 1.0 * a
+                tpr = max(0.8, ((Sp + R) / 2 - c[d]) / sld)
+            elif -1 in sides and h[d] >= R - sr_tol * a and R14[d] > 100 - rsi_rng - 10 and c[d] < o[d] and c[d] < R:
+                side, sld = -1, (R - c[d]) + 1.0 * a
+                tpr = max(0.8, (c[d] - (Sp + R) / 2) / sld)
+            mx = 10
+        if side == 0:
+            continue
+        res = run_trade(I, i0, side, sld, tpr, flag, mx * 23, be_r=be_r)
+        if res is None:
+            continue
+        out.append((res, side, I.dt[d + 1], int(reg[d])))
+        busy = int(res[0][-1])
+    return out
+
+
+def adaptive_mr(I: Inst, setup="pb", th=10, sl=2.0, maxd=10, exit_ma=5, sr_atr=1.0, look_sr=120, k_piv=3, sides=(1, -1)):
+    """pb : en tendance (regime), RSI2 extreme contre la tendance -> entree dans le sens de la tendance.
+       rng : regime neutre, RSI2 extreme pres d'un support (achat) / d'une resistance (vente)."""
+    c, h, l = I.dc, I.dh, I.dl
+    A = atr(h, l, c, 20)
+    R2 = rsi(c, 2)
+    X = sma(c, exit_ma)
+    reg, E50, E200 = regime_arrays(I)
+    ph, pl = _pivots(h, l, k_piv)
+    fL = _daily_flag(I, c > X); fS = _daily_flag(I, c < X)
+    out = []; busy = -1
+    for d in range(260, len(c) - 1):
+        i0 = _entry_bar(I, d + 1)
+        if i0 <= busy or not A[d] > 0:
+            continue
+        side = 0
+        if setup == "pb":
+            if reg[d] == 1 and 1 in sides and R2[d] < th:
+                side = 1
+            elif reg[d] == -1 and -1 in sides and R2[d] > 100 - th:
+                side = -1
+        else:
+            if reg[d] != 0:
+                continue
+            lo_w = max(0, d - look_sr)
+            ph_w = ph[lo_w:d + 1]; pl_w = pl[lo_w:d + 1]
+            sup = pl_w[pl_w < c[d]]; res_ = ph_w[ph_w > c[d]]
+            Sp = sup.max() if sup.size else np.nan; Rr = res_.min() if res_.size else np.nan
+            if 1 in sides and R2[d] < th and Sp == Sp and c[d] - Sp <= sr_atr * A[d]:
+                side = 1
+            elif -1 in sides and R2[d] > 100 - th and Rr == Rr and Rr - c[d] <= sr_atr * A[d]:
+                side = -1
+        if side == 0:
+            continue
+        res = run_trade(I, i0, side, A[d] * sl, 0.0, fL if side > 0 else fS, maxd * 23)
+        if res is None:
+            continue
+        out.append((res, side, I.dt[d + 1], int(reg[d])))
+        busy = int(res[0][-1])
+    return out
+
+
+def regime_mom(I: Inst, look=60, sl=3.0, hold_days=4, sides=(1, -1)):
+    """Momentum hebdo (vendredi) dans le sens du regime : achat si regime haussier et c > c[-look], vente si baissier."""
+    A = atr(I.dh, I.dl, I.dc, 20)
+    reg, _, _ = regime_arrays(I)
+    wd = I.dt.weekday.to_numpy()
+    def sig(d):
+        if wd[d] != 4 or not A[d] > 0:
+            return 0
+        if reg[d] == 1 and 1 in sides and I.dc[d] > I.dc[d - look]:
+            return 1
+        if reg[d] == -1 and -1 in sides and I.dc[d] < I.dc[d - look]:
+            return -1
+        return 0
+    return _daily_loop(I, sig, lambda d, i0, s: run_trade(I, i0, s, A[d] * sl, 0.0, None, hold_days * 23 + 12), 260)
+
+
+def regime_d7(I: Inst, n=7, sl=3.0, maxd=10, sides=(1, -1)):
+    """Double-7 dans le sens du regime : achat au plus bas 7j si haussier, vente au plus haut 7j si baissier."""
+    A = atr(I.dh, I.dl, I.dc, 20)
+    reg, _, _ = regime_arrays(I)
+    LO = llv(I.dc, n); HI = hhv(I.dc, n)
+    fL = _daily_flag(I, I.dc >= HI); fS = _daily_flag(I, I.dc <= LO)
+    def sig(d):
+        if not A[d] > 0:
+            return 0
+        if reg[d] == 1 and 1 in sides and I.dc[d] <= LO[d]:
+            return 1
+        if reg[d] == -1 and -1 in sides and I.dc[d] >= HI[d]:
+            return -1
+        return 0
+    return _daily_loop(I, sig, lambda d, i0, s: run_trade(I, i0, s, A[d] * sl, 0.0, fL if s > 0 else fS, maxd * 23), 260)

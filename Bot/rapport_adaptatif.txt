@@ -1,0 +1,95 @@
+
+##### ADAPTATIF (achat + vente selon regime)
+R par annee et par brique (2008-2026):
+c     rbrk20  rbrk55  rmom  ventes_R
+y                                   
+2008    -0.0    -0.2  -0.5      -3.0
+2009     4.4     2.0   1.8       0.0
+2010     1.5     2.7  -0.5       0.0
+2011     6.5     4.9   0.4       0.0
+2012     1.1    -0.2   0.4       1.6
+2013     3.3     3.2   3.8      10.4
+2014     0.2    -0.1  -1.2      -1.2
+2015     1.7     0.9   2.5       5.1
+2016    -2.9    -3.1   0.8       2.2
+2017    -1.0    -1.1  -1.2      -0.6
+2018    -0.9     1.7   2.2       2.3
+2019     7.3     4.8   3.8       0.0
+2020     5.9     6.1   3.8       0.0
+2021    -3.2    -3.1  -3.9      -5.1
+2022     2.2     2.1  -0.4       2.5
+2023     1.3    -0.2  -0.4      -0.7
+2024     6.4     2.7   4.8       0.0
+2025    13.2     8.6   9.8       0.0
+2026     2.0     2.0  -0.8      -1.0
+  DEV k1.0 maxopen4.0 dds0.06: reussite 100% echec 0.0% median 2002j p90 3967j
+  DEV k1.0 maxopen4.0 dds0.1: reussite 100% echec 0.0% median 1768j p90 2964j
+  DEV k1.0 maxopen5.0 dds0.06: reussite 100% echec 0.0% median 2002j p90 3967j
+  DEV k1.0 maxopen5.0 dds0.1: reussite 100% echec 0.0% median 1768j p90 2964j
+  DEV k1.5 maxopen4.0 dds0.06: reussite 100% echec 0.0% median 1218j p90 2526j
+  DEV k1.5 maxopen4.0 dds0.1: reussite 100% echec 0.0% median 1031j p90 2525j
+  DEV k1.5 maxopen5.0 dds0.06: reussite 100% echec 0.0% median 1218j p90 2526j
+  DEV k1.5 maxopen5.0 dds0.1: reussite 100% echec 0.0% median 1031j p90 2525j
+  DEV k2.0 maxopen4.0 dds0.06: reussite 100% echec 0.0% median 1057j p90 2515j
+  DEV k2.0 maxopen4.0 dds0.1: reussite 90% echec 0.0% median 827j p90 2244j
+  DEV k2.0 maxopen5.0 dds0.06: reussite 100% echec 0.0% median 994j p90 2488j
+  DEV k2.0 maxopen5.0 dds0.1: reussite 88% echec 0.0% median 683j p90 1989j
+  DEV k2.5 maxopen4.0 dds0.06: reussite 87% echec 0.0% median 682j p90 1986j
+  DEV k2.5 maxopen4.0 dds0.1: reussite 85% echec 0.0% median 653j p90 2010j
+  DEV k2.5 maxopen5.0 dds0.06: reussite 84% echec 0.0% median 765j p90 2014j
+  DEV k2.5 maxopen5.0 dds0.1: reussite 85% echec 0.0% median 751j p90 2185j
+  DEV k3.0 maxopen4.0 dds0.06: reussite 98% echec 0.0% median 791j p90 2398j
+  DEV k3.0 maxopen4.0 dds0.1: reussite 84% echec 0.0% median 551j p90 2211j
+  DEV k3.0 maxopen5.0 dds0.06: reussite 94% echec 0.0% median 692j p90 2203j
+  DEV k3.0 maxopen5.0 dds0.1: reussite 72% echec 0.0% median 501j p90 1974j
+REGLAGE RETENU: K 3.0 | risque ouvert max 4.0% | reduction DD 6%
+  CHALLENGE DEV 2008-2015: reussite 98% | echec 0.0% | median 791j | 75% 1828j | 90% 2398j | <=6 mois 2%
+    par annee de depart (median jours / echec%): {2008: (987, 0), 2009: (412, 0), 2010: (411, 0), 2011: (625, 0), 2012: (470, 0), 2013: (2440, 0), 2014: (2061, 0), 2015: (1662, 0)}
+  CHALLENGE TEST 2016-2025 (jamais vu): reussite 87% | echec 0.0% | median 529j | 75% 860j | 90% 1231j | <=6 mois 9%
+    par annee de depart (median jours / echec%): {2016: (1323, 0), 2017: (882, 0), 2018: (487, 0), 2019: (272, 0), 2020: (196, 0), 2021: (1159, 0), 2022: (706, 0), 2023: (288, 0), 2024: (210, 0), 2025: (186, 0)}
+  FINANCE K1.5 2008-2026: +577$/mois | mois+ 40% | pire mois -4599 | DD pic 19.7% | statut OK
+    annees: {2008: 242.0, 2009: 9250.0, 2010: 4147.0, 2011: 15247.0, 2012: 2668.0, 2013: 12808.0, 2014: -2793.0, 2015: 5292.0, 2016: -6026.0, 2017: -3153.0, 2018: 2246.0, 2019: 14388.0, 2020: 22707.0, 2021: -11551.0, 2022: 5138.0, 2023: 2532.0, 2024: 16108.0, 2025: 37303.0, 2026: 4478.0}
+  [2008-2026] fenetres glissantes -> 1 mois: positif  39% | median     +0$ | pire  -6388$ || 3 mois: positif  52% | median   +214$ | pire  -9400$ || 6 mois: positif  66% | median  +1983$ | pire  -9767$ || plus longue periode sous le sommet: 44 mois
+  FINANCE K1.5 2016-2026: +571$/mois | mois+ 43% | pire mois -4372 | DD pic 19.7% | statut OK
+    annees: {2016: -4367.0, 2017: -1244.0, 2018: 535.0, 2019: 4291.0, 2020: 21541.0, 2021: -11551.0, 2022: 5138.0, 2023: 2532.0, 2024: 16108.0, 2025: 37303.0, 2026: 4478.0}
+  [2016-2026] fenetres glissantes -> 1 mois: positif  38% | median     +0$ | pire  -5412$ || 3 mois: positif  52% | median   +126$ | pire  -6283$ || 6 mois: positif  70% | median  +1099$ | pire  -8575$ || plus longue periode sous le sommet: 47 mois
+
+##### v1.3 ACHAT SEUL (reglages 2020-2026, donc 2008-2019 = hors echantillon)
+R par annee et par brique (2008-2026):
+c     brk20  brk55   d7   mom  ventes_R
+y                                      
+2007    8.0    4.8  1.1  -1.2       0.0
+2008   -0.5    1.9  0.5  -0.6       0.0
+2009    2.7    7.6  0.6   1.1       0.0
+2010    2.0    1.6  3.7  -0.2       0.0
+2011    4.2    2.7 -0.5   1.7       0.0
+2012    2.3   -0.2 -1.2  -0.7       0.0
+2013    0.0   -1.1  0.2  -1.9       0.0
+2014   -1.0   -0.2 -1.0  -4.4       0.0
+2015   -1.3   -2.1 -0.6  -1.1       0.0
+2016   -2.0   -2.2 -0.2   2.3       0.0
+2017   -3.1   -3.0 -3.8  -0.4       0.0
+2018   -0.1    2.7  0.8   2.0       0.0
+2019    4.9    4.6  2.2   4.6       0.0
+2020    2.7    5.0  4.2   2.7       0.0
+2021   -0.2    0.9 -1.8  -0.2       0.0
+2022    0.3    1.6 -0.8  -1.2       0.0
+2023    1.1    0.2 -0.6   0.7       0.0
+2024    5.2    1.6  3.6   4.6       0.0
+2025   14.5    8.6  3.3  10.2       0.0
+2026    2.6    0.9 -1.0  -0.2       0.0
+REGLAGE RETENU: K 2.0 | risque ouvert max 5.0% | reduction DD 6%
+  CHALLENGE DEV 2008-2015: reussite 38% | echec 0.0% | median 531j | 75% 777j | 90% 1180j | <=6 mois 3%
+    par annee de depart (median jours / echec%): {2008: (804, 0), 2009: (352, 0), 2010: (365, 0), 2011: (168, 0), 2012: (None, 0), 2013: (None, 0), 2014: (None, 0), 2015: (1679, 0)}
+  CHALLENGE TEST 2016-2025 (jamais vu): reussite 95% | echec 0.0% | median 421j | 75% 1094j | 90% 1396j | <=6 mois 17%
+    par annee de depart (median jours / echec%): {2016: (1392, 0), 2017: (967, 0), 2018: (375, 0), 2019: (228, 0), 2020: (1425, 0), 2021: (1179, 0), 2022: (329, 0), 2023: (414, 0), 2024: (190, 0), 2025: (152, 0)}
+  FINANCE K1.0 2008-2026: +327$/mois | mois+ 37% | pire mois -3869 | DD pic 26.9% | statut OK
+    annees: {2008: 1266.0, 2009: 8193.0, 2010: 6046.0, 2011: 6765.0, 2012: 533.0, 2013: -1746.0, 2014: -4529.0, 2015: -3922.0, 2016: -3195.0, 2017: -7690.0, 2018: 3759.0, 2019: 8953.0, 2020: 15463.0, 2021: -2446.0, 2022: -144.0, 2023: 2720.0, 2024: 12609.0, 2025: 28154.0, 2026: 3386.0}
+  [2008-2026] fenetres glissantes -> 1 mois: positif  39% | median     +0$ | pire  -4996$ || 3 mois: positif  45% | median     -6$ | pire  -6691$ || 6 mois: positif  53% | median   +333$ | pire  -7974$ || plus longue periode sous le sommet: 110 mois
+  FINANCE K1.0 2016-2026: +431$/mois | mois+ 43% | pire mois -3343 | DD pic 11.9% | statut OK
+    annees: {2016: -2238.0, 2017: -3641.0, 2018: 1128.0, 2019: 2928.0, 2020: 13979.0, 2021: -2446.0, 2022: -144.0, 2023: 2720.0, 2024: 12609.0, 2025: 28154.0, 2026: 3386.0}
+  [2016-2026] fenetres glissantes -> 1 mois: positif  43% | median     +0$ | pire  -4996$ || 3 mois: positif  49% | median     +0$ | pire  -6691$ || 6 mois: positif  58% | median  +1055$ | pire  -7278$ || plus longue periode sous le sommet: 49 mois
+FINANCE K0.75 (depart chaque mois, 12 mois): casse -10% 0.0% | annee positive 68% | gain median +204$/mois | pire annee -4405$ | equity la plus basse 95426$
+FINANCE K1.0 (depart chaque mois, 12 mois): casse -10% 0.0% | annee positive 68% | gain median +259$/mois | pire annee -5182$ | equity la plus basse 94593$
+FINANCE K1.25 (depart chaque mois, 12 mois): casse -10% 0.0% | annee positive 67% | gain median +308$/mois | pire annee -6019$ | equity la plus basse 93700$
+FINANCE K1.5 (depart chaque mois, 12 mois): casse -10% 0.0% | annee positive 67% | gain median +335$/mois | pire annee -6921$ | equity la plus basse 92742$
