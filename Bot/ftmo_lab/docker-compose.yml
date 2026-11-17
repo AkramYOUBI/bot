@@ -1,0 +1,9 @@
+services:
+  lab:
+    build: .
+    image: ftmo-lab
+    volumes:
+      - ./lab:/lab
+      - ./data:/data:ro
+      - ./out:/out
+    working_dir: /lab

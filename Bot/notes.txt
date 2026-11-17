@@ -62,3 +62,20 @@ RETENU: D1 e20/x10 SL1.8ATR risk1.5% TP2R EMA on
 PLUS RAPIDE +10%: H1 long-only e36/x18 SL2.2 risk1% TP2R -> +10% 2020-04-13 net +21829$ DD2.5%
 Photo +13M: rejetee (hors FTMO).
 GoldFTMO.mq5 defaults aligns: risk 1.5, SL 1.8, D1, buy only.
+
+=== FTMOPortfolio v1.0 (17 Nov 2026) — NOUVEAU ROBOT RETENU ===
+Labo Docker: Bot/ftmo_lab (Dukascopy H1 bid+ask 2019-2026, regles FTMO 2-Step exactes,
+~300 challenges simules = un depart chaque semaine 2020->2025).
+Pourquoi GoldFTMO est lent: 1 seul marche, ~7 trades/an, Sharpe ~0.85 -> median 1110 jours.
+Solution: 13 briques decorrelees (Sharpe portefeuille ~1.6):
+  Cassure 20j (logique GoldFTMO) sur Or + WTI + Brent | Cassure crypto BTC/ETH TP3R
+  Retour moyenne indices: IBS (US100/US500/US30/GER40), RSI2 (US500/US100), Double-7 (US30, Or)
+CHALLENGE (K=2.5): reussite 98 % | echec 0 % | median 239 j (vs 1110 GoldFTMO) | 90 % en 728 j
+FINANCE  (K=0.75): +898 $/mois moyen (median +629) | DD pic 6.1 % | equity min 98 785 | 2022: -2.8k
+Stress couts x2: 97 % / 0 echec / +757 $/mois | Sans crypto: 99 % / +762 $/mois
+Regle prudente max(solde,equity): 94 % / 0 echec
+Rejetes: tendance Forex (perd), retour moyenne H1 (couts), saisonnalite horaire or (artefact spread),
+         agricoles/platine (bruit).
+Fichiers: FTMOPortfolio.mq5, mt5_test_portfolio.ini, rapport_ftmo_portfolio.txt
+A FAIRE: compiler dans MetaEditor (non compilable sous Docker/Mac ARM), test MT5 2020+ sur XAUUSD H1,
+         compte HEDGING, verifier noms symboles (USOIL.cash, UKOIL.cash, US100.cash, GER40.cash...).
