@@ -79,3 +79,15 @@ Rejetes: tendance Forex (perd), retour moyenne H1 (couts), saisonnalite horaire 
 Fichiers: FTMOPortfolio.mq5, mt5_test_portfolio.ini, rapport_ftmo_portfolio.txt
 A FAIRE: compiler dans MetaEditor (non compilable sous Docker/Mac ARM), test MT5 2020+ sur XAUUSD H1,
          compte HEDGING, verifier noms symboles (USOIL.cash, UKOIL.cash, US100.cash, GER40.cash...).
+
+=== FTMOPortfolio v1.1 : backtest accelere (travail 1x/jour/brique, etat en memoire, pas de panneau en test). Testeur: modele "1 minute OHLC", PAS "ticks reels".
+
+=== FTMOPortfolio v1.3 — MODE OR SEUL (choix utilisateur, 17 Nov 2026) ===
+Test MT5 utilisateur v1.1 (mode finance K0.75): +15 769$ / 122 trades / DD 4.5%, "Symbols 1"
+ = seules les 2 briques or ont tourne. Simu Python memes briques: +16 754$ / 128 trades / DD 4.7% -> moteur valide.
+Or seul = 4 briques: cassure 20j TP3R (1.0) + cassure 55j (0.7) + Double-7 (0.8) + momentum 60j hebdo vendredi (0.6)
+Reglages: K challenge 2.0 | finance 1.0 | risque ouvert max 5% | garde-fou 3.5% | reduction DD 6%
+Challenge: 99% reussite, 0 echec, median 357 j (vs ~900-1100 GoldFTMO), MAIS departs 2020-21 = 3-4 ans
+Finance K1.0: +682$/mois moyen, mois positifs 49%, 2021 -2.4k, 2022 -0.1k, 2025 +28k (tres dependant du regime de l'or)
+Couts x2: 97% / 0 echec / median 519 j / +600$/mois
+Rejetes or: range asiatique, cassures H1, RSI2/IBS or. Multi-marches reste dispo (InpUniverse=1) : 239 j / ~900$/mois.

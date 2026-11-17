@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//| FTMOPortfolio.mq5  v1.0                                          |
+//| FTMOPortfolio.mq5  v1.3                                          |
 //| Portefeuille multi-marches pour challenge FTMO 100k 2-Step       |
 //|  - Tendance  : cassure 20j (logique GoldFTMO) sur Or, WTI, Brent |
 //|  - Crypto    : cassure 20j long, TP 3R sur BTC, ETH              |
@@ -12,7 +12,7 @@
 //| Valide sur Dukascopy H1 bid/ask 2020-2026 (ftmo_lab/).           |
 //+------------------------------------------------------------------+
 #property copyright "FTMO Portfolio"
-#property version   "1.00"
+#property version   "1.30"
 #property strict
 
 #include <Trade/Trade.mqh>
@@ -24,11 +24,18 @@ enum EMode
    MODE_FUNDED = 2    // Compte finance (pas d'objectif, risque reduit)
   };
 
+enum EUniverse
+  {
+   UNIV_GOLD  = 0,    // Or seul (XAUUSD) - 4 briques
+   UNIV_MULTI = 1     // Multi-marches - 13 briques
+  };
+
 input group "=== Mode ==="
+input EUniverse InpUniverse   = UNIV_GOLD;   // Univers (or seul / multi-marches)
 input EMode  InpMode          = MODE_PHASE1; // Mode
 input double InpCapital       = 100000.0;    // Capital initial du compte
-input double InpKChallenge    = 2.5;         // Multiplicateur de risque Phase 1/2
-input double InpKFunded       = 0.75;        // Multiplicateur de risque finance
+input double InpKChallenge    = 2.0;         // Multiplicateur risque Phase 1/2 (or 2.0 | multi 2.5)
+input double InpKFunded       = 1.0;         // Multiplicateur risque finance (or 1.0 | multi 0.75)
 input double InpTarget1Pct    = 10.0;        // Objectif Phase 1 %
 input double InpTarget2Pct    = 5.0;         // Objectif Phase 2 %
 input int    InpMinDays       = 4;           // Jours de trading minimum FTMO
@@ -37,8 +44,8 @@ input bool   InpStopAtTarget  = true;        // Tout fermer et arreter a l'objec
 input group "=== Protection FTMO ==="
 input double InpDailyGuardPct = 3.5;         // Garde-fou jour % (FTMO = 5)
 input double InpMaxLossPct    = 10.0;        // Perte max totale FTMO %
-input double InpMaxOpenPct    = 8.0;         // Risque ouvert max cumule %
-input double InpDDScalePct    = 10.0;        // Risque reduit lineairement en DD (0=off)
+input double InpMaxOpenPct    = 5.0;         // Risque ouvert max cumule % (or 5 | multi 8)
+input double InpDDScalePct    = 6.0;         // Risque reduit lineairement en DD % (or 6 | multi 10)
 input int    InpPragueOffset  = 1;           // Heure serveur - heure Prague (FTMO = 1)
 
 input group "=== Execution ==="
@@ -71,6 +78,7 @@ input bool InpUseRSI2 = true;   // RSI(2) indices
 #define T_D7   2
 #define T_IBS  3
 #define T_RSI2 4
+#define T_MOM  5
 
 struct Comp
   {
@@ -82,9 +90,14 @@ struct Comp
    double   tpR;      // 0 = pas de TP
    double   th;       // seuil (RSI)
    int      maxd;     // jours max
+   int      en;       // cassure : N barres entree | momentum : recul N jours
+   int      ex;       // cassure : N barres sortie
    long     magic;
    bool     on;
    datetime doneBar;  // derniere bougie D1 traitee
+   datetime nextCheck;// prochaine verification (evite le travail a chaque tick)
+   bool     warnHist;
+   int      nSig, nTrade, nRisk, nLot, nRefus, nHist, nLive; // bilan (journal en fin de test)
   };
 
 Comp   C[];
@@ -92,14 +105,24 @@ CTrade trade;
 string gvPrefix;
 string g_log = "";
 
-#define NBARS 320
+#define NBARS   260
+#define MINBARS 215
+
+//--- etat en memoire (GlobalVariables ecrites seulement quand ca change)
+int    s_day = 0, s_lastTd = 0;
+double s_dayBal = 0.0, s_tdays = 0.0;
+bool   s_hday = false, s_hall = false, s_done = false;
+bool   g_tester = false;
 
 //+------------------------------------------------------------------+
 void AddComp(const string name, const string sym, const int type, const double w,
-             const double slAtr, const double tpR, const double th, const int maxd, const bool use)
+             const double slAtr, const double tpR, const double th, const int maxd, const bool use,
+             const int en = 20, const int ex = 10)
   {
    int n = ArraySize(C);
    ArrayResize(C, n + 1);
+   C[n].en = en;
+   C[n].ex = ex;
    C[n].name = name;
    C[n].sym = sym;
    C[n].type = type;
@@ -111,6 +134,47 @@ void AddComp(const string name, const string sym, const int type, const double w
    C[n].magic = InpMagicBase + n;
    C[n].on = use;
    C[n].doneBar = 0;
+   C[n].nextCheck = 0;
+   C[n].warnHist = false;
+   C[n].nSig = 0; C[n].nTrade = 0; C[n].nRisk = 0; C[n].nLot = 0;
+   C[n].nRefus = 0; C[n].nHist = 0; C[n].nLive = 0;
+  }
+
+//+------------------------------------------------------------------+
+//| Trouve le nom du symbole chez le broker (FTMO ou autre)          |
+//+------------------------------------------------------------------+
+bool TrySym(const string name, string &out)
+  {
+   bool custom = false;
+   if(name == "" || !SymbolExist(name, custom))
+      return false;
+   if(!SymbolSelect(name, true))
+      return false;
+   out = name;
+   return true;
+  }
+
+string ResolveSym(const string wanted)
+  {
+   string out = "";
+   if(TrySym(wanted, out))
+      return out;
+   string alt = "";
+   if(wanted == InpGold)  alt = "XAUUSD,GOLD,XAUUSD.,XAUUSDm,XAUUSD.a";
+   if(wanted == InpWTI)   alt = "USOIL.cash,USOIL,WTI,XTIUSD,USOUSD,CL-OIL,WTI.cash,OILUSD";
+   if(wanted == InpBrent) alt = "UKOIL.cash,UKOIL,BRENT,XBRUSD,UKOUSD,BRENT.cash";
+   if(wanted == InpBTC)   alt = "BTCUSD,BTCUSD.,BTCUSDm,BITCOIN,XBTUSD";
+   if(wanted == InpETH)   alt = "ETHUSD,ETHUSD.,ETHUSDm,ETHEREUM";
+   if(wanted == InpUS30)  alt = "US30.cash,US30,DJ30,WS30,US30Cash,DOW30,USA30";
+   if(wanted == InpUS100) alt = "US100.cash,US100,NAS100,USTEC,NDX100,US100Cash,USTECH";
+   if(wanted == InpUS500) alt = "US500.cash,US500,SPX500,SP500,US500Cash,USA500";
+   if(wanted == InpGER40) alt = "GER40.cash,GER40,DE40,DAX40,GER30,DE30,GER40Cash";
+   string parts[];
+   int k = StringSplit(alt, ',', parts);
+   for(int j = 0; j < k; j++)
+      if(TrySym(parts[j], out))
+         return out;
+   return "";
   }
 
 //+------------------------------------------------------------------+
@@ -119,6 +183,16 @@ int OnInit()
    if(InpCapital <= 0.0)
       return INIT_PARAMETERS_INCORRECT;
    ArrayResize(C, 0);
+   if(InpUniverse == UNIV_GOLD)
+     {
+      //       nom        symbole  type   poids SL   TP  seuil maxj actif      en  ex
+      AddComp("BRK20_OR", InpGold, T_BRK, 1.00, 1.8, 3.0, 0, 15, InpUseBRK, 20, 10);
+      AddComp("BRK55_OR", InpGold, T_BRK, 0.70, 1.8, 2.0, 0, 30, InpUseBRK, 55, 20);
+      AddComp("D7_OR",    InpGold, T_D7,  0.80, 3.0, 0.0, 0, 10, InpUseD7);
+      AddComp("MOM_OR",   InpGold, T_MOM, 0.60, 3.0, 0.0, 0,  4, true,      60,  0);
+     }
+   else
+     {
    //       nom          symbole   type    poids  SL   TP  seuil maxj  actif
    AddComp("BRK_OR",    InpGold,  T_BRK,  1.00, 1.8, 2.0,  0, 15, InpUseBRK);
    AddComp("BRK_WTI",   InpWTI,   T_BRK,  0.70, 1.8, 2.0,  0, 15, InpUseBRK);
@@ -133,17 +207,25 @@ int OnInit()
    AddComp("IBS_GER40", InpGER40, T_IBS,  0.40, 3.0, 0.0,  0,  5, InpUseIBS);
    AddComp("RSI2_US500",InpUS500, T_RSI2, 0.60, 2.0, 0.0, 10, 10, InpUseRSI2);
    AddComp("RSI2_US100",InpUS100, T_RSI2, 0.60, 2.0, 0.0, 20, 10, InpUseRSI2);
+     }
 
    for(int i = 0; i < ArraySize(C); i++)
      {
       if(!C[i].on)
          continue;
-      if(!SymbolSelect(C[i].sym, true))
+      string found = ResolveSym(C[i].sym);
+      if(found == "")
         {
-         PrintFormat("Symbole %s introuvable -> brique %s desactivee (verifie le nom chez ton broker).",
+         PrintFormat("!! Symbole %s introuvable -> brique %s DESACTIVEE (mets le bon nom dans les parametres).",
                      C[i].sym, C[i].name);
          C[i].on = false;
+         continue;
         }
+      if(found != C[i].sym)
+         PrintFormat("Symbole %s remplace par %s pour %s.", C[i].sym, found, C[i].name);
+      C[i].sym = found;
+      PrintFormat("Brique %-11s -> %-12s | lot min %.2f | pas %.2f", C[i].name, C[i].sym,
+                  SymbolInfoDouble(C[i].sym, SYMBOL_VOLUME_MIN), SymbolInfoDouble(C[i].sym, SYMBOL_VOLUME_STEP));
      }
 
    gvPrefix = "FP1_" + IntegerToString((long)AccountInfoInteger(ACCOUNT_LOGIN)) + "_" +
@@ -153,17 +235,33 @@ int OnInit()
       GlobalVariableSet(gvPrefix + "HALL", 0.0);
       GlobalVariableSet(gvPrefix + "HDAY", 0.0);
       GlobalVariableSet(gvPrefix + "DONE", 0.0);
+      s_hall = false; s_hday = false; s_done = false;
       Print("Arrets effaces. Remets InpResetHalt=false.");
      }
+   if(MQLInfoInteger(MQL_TESTER))
+      GlobalVariablesDeleteAll(gvPrefix);      // chaque backtest repart d'un etat propre
+   s_day    = (int)GV("DAY");
+   s_dayBal = GV("DAYBAL");
+   s_hday   = GV("HDAY") > 0.5;
+   s_hall   = GV("HALL") > 0.5;
+   s_done   = GV("DONE") > 0.5;
+   s_tdays  = GV("TDAYS");
+   s_lastTd = (int)GV("LASTTD");
+   g_tester = (bool)MQLInfoInteger(MQL_TESTER) && !(bool)MQLInfoInteger(MQL_VISUAL_MODE);
    trade.SetDeviationInPoints(InpDeviation);
-   EventSetTimer(30);
-   PrintFormat("FTMOPortfolio v1.0 | mode %s | K %.2f | capital %.0f | %d briques",
+   EventSetTimer(60);   // crypto le week-end : pas de tick sur l'or, le timer prend le relais
+   PrintFormat("FTMOPortfolio v1.3 | mode %s | K %.2f | capital %.0f | %d briques",
                EnumToString(InpMode), K(), InpCapital, ArraySize(C));
    return INIT_SUCCEEDED;
   }
 
 void OnDeinit(const int reason)
   {
+   Print("===== BILAN PAR BRIQUE (signaux / trades / refus risque / lot trop petit / refus broker / historique KO / marche ferme) =====");
+   for(int i = 0; i < ArraySize(C); i++)
+      PrintFormat("%-11s %-12s %s | sig %d | trades %d | risque %d | lot %d | refus %d | hist %d | ferme %d",
+                  C[i].name, C[i].sym, C[i].on ? "ON " : "OFF", C[i].nSig, C[i].nTrade, C[i].nRisk,
+                  C[i].nLot, C[i].nRefus, C[i].nHist, C[i].nLive);
    EventKillTimer();
    Comment("");
   }
@@ -260,39 +358,44 @@ double OpenRisk()
 bool Guard()
   {
    int day = FtmoDay();
-   if((int)GV("DAY") != day)
+   if(s_day != day)
      {
+      s_day = day;
+      s_dayBal = AccountInfoDouble(ACCOUNT_BALANCE);   // regle FTMO : solde debut de jour
+      s_hday = false;
       GVSet("DAY", day);
-      GVSet("DAYBAL", AccountInfoDouble(ACCOUNT_BALANCE));   // regle FTMO : solde debut de jour
+      GVSet("DAYBAL", s_dayBal);
       GVSet("HDAY", 0.0);
      }
-   if(GV("HALL") > 0.5 || GV("DONE") > 0.5)
+   if(s_hall || s_done)
       return false;
 
    double eq = AccountInfoDouble(ACCOUNT_EQUITY);
-   double dayFloor = GV("DAYBAL") - InpCapital * InpDailyGuardPct / 100.0;
+   double dayFloor = s_dayBal - InpCapital * InpDailyGuardPct / 100.0;
    double maxFloor = InpCapital * (1.0 - InpMaxLossPct / 100.0) + InpCapital * 0.002;
 
    if(eq <= maxFloor)
      {
       CloseAll("ARRET TOTAL : proche du plafond -10 %.");
+      s_hall = true;
       GVSet("HALL", 1.0);
       return false;
      }
+   if(s_hday)
+      return false;
    if(eq <= dayFloor)
      {
-      if(GV("HDAY") < 0.5)
-         CloseAll(StringFormat("JOURNEE COUPEE : garde-fou -%.1f %% atteint.", InpDailyGuardPct));
+      CloseAll(StringFormat("JOURNEE COUPEE : garde-fou -%.1f %% atteint.", InpDailyGuardPct));
+      s_hday = true;
       GVSet("HDAY", 1.0);
       return false;
      }
-   if(GV("HDAY") > 0.5)
-      return false;
 
    double tgt = TargetPct();
-   if(InpStopAtTarget && tgt > 0.0 && eq >= InpCapital * (1.0 + tgt / 100.0) && GV("TDAYS") >= InpMinDays)
+   if(InpStopAtTarget && tgt > 0.0 && eq >= InpCapital * (1.0 + tgt / 100.0) && s_tdays >= InpMinDays)
      {
-      CloseAll(StringFormat("OBJECTIF +%.0f %% ATTEINT (%.0f jours de trading). Robot arrete.", tgt, GV("TDAYS")));
+      CloseAll(StringFormat("OBJECTIF +%.0f %% ATTEINT (%.0f jours de trading). Robot arrete.", tgt, s_tdays));
+      s_done = true;
       GVSet("DONE", 1.0);
       return false;
      }
@@ -302,10 +405,12 @@ bool Guard()
 void CountTradingDay()
   {
    int day = FtmoDay();
-   if((int)GV("LASTTD") != day)
+   if(s_lastTd != day)
      {
+      s_lastTd = day;
+      s_tdays += 1.0;
       GVSet("LASTTD", day);
-      GVSet("TDAYS", GV("TDAYS") + 1.0);
+      GVSet("TDAYS", s_tdays);
      }
   }
 
@@ -392,7 +497,9 @@ bool ExitSignal(const int i, const MqlRates &r[], const int n)
      {
       case T_BRK:
       case T_CRY:
-         return c1 < LoMin(r, d - 10, d - 1);          // cloture sous le plus bas 10j
+         return c1 < LoMin(r, d - C[i].ex, d - 1);     // cloture sous le plus bas N jours
+      case T_MOM:
+         return false;                                  // sortie par le temps (4 jours)
       case T_D7:
          return c1 >= ClMax(r, d - 6, d);               // cloture au plus haut 7j
       case T_IBS:
@@ -426,19 +533,28 @@ bool EntrySignal(const int i, const MqlRates &r[], const int n, double &slDist, 
          avg /= 50.0;
          if(avg > 0.0 && A > 2.2 * avg)
             return false;                                       // volatilite extreme
-         double h1 = HiMax(r, d - 20, d - 1), h2 = HiMax(r, d - 21, d - 2);
+         double h1 = HiMax(r, d - C[i].en, d - 1), h2 = HiMax(r, d - C[i].en - 1, d - 2);
          if(!(c1 > h1 && c2 <= h2))
             return false;
          double ema[];
          EmaArr(r, n, 50, ema);
          if(!(c1 > ema[d] && ema[d] > ema[d - 3]))
             return false;
-         why = StringFormat("cassure 20j %.2f > %.2f", c1, h1);
+         why = StringFormat("cassure %dj %.2f > %.2f", C[i].en, c1, h1);
+         return true;
+        }
+      case T_MOM:
+        {
+         MqlDateTime bt;
+         TimeToStruct(r[d].time, bt);
+         if(bt.day_of_week != 5 || !(c1 > r[d - C[i].en].close))
+            return false;                               // signal a la cloture du vendredi
+         why = StringFormat("momentum %dj : %.2f > %.2f", C[i].en, c1, r[d - C[i].en].close);
          return true;
         }
       case T_CRY:
         {
-         double h1 = HiMax(r, d - 20, d - 1);
+         double h1 = HiMax(r, d - C[i].en, d - 1);
          if(!(c1 > h1))
             return false;
          why = StringFormat("cassure crypto %.0f > %.0f", c1, h1);
@@ -515,19 +631,50 @@ void Process(const int i, const bool canOpen)
   {
    if(!C[i].on)
       return;
+   datetime now = TimeCurrent();
+   if(now < C[i].nextCheck)
+      return;                                              // rien a faire avant cette heure
    datetime bar = iTime(C[i].sym, PERIOD_D1, 0);
-   if(bar == 0 || bar == C[i].doneBar)
+   if(bar == 0)
+     {
+      C[i].nextCheck = now + 3600;
       return;
-   MqlDateTime now;
-   TimeToStruct(TimeCurrent(), now);
-   if(now.hour < InpEntryHour || !MarketLive(C[i].sym))
+     }
+   datetime act = bar + InpEntryHour * 3600;               // heure d'action du jour
+   if(bar == C[i].doneBar)
+     {
+      // deja traite : on revient a l'heure d'action de la prochaine bougie D1
+      datetime nxt = bar + 86400 + InpEntryHour * 3600;
+      C[i].nextCheck = (nxt > now) ? nxt : now + 3600;    // week-end / jour ferie : toutes les heures
       return;
+     }
+   if(now < act)
+     {
+      C[i].nextCheck = act;
+      return;
+     }
+   if(!MarketLive(C[i].sym))
+     {
+      C[i].nLive++;
+      C[i].nextCheck = now + 600;
+      return;
+     }
 
    MqlRates r[];
    ArraySetAsSeries(r, false);
    int n = CopyRates(C[i].sym, PERIOD_D1, 1, NBARS, r);   // r[n-1] = bougie d'hier
-   if(n < 260)
-      return;                                              // historique pas encore pret
+   if(n < MINBARS)
+     {
+      C[i].nHist++;
+      if(!C[i].warnHist)
+        {
+         PrintFormat("%s : historique D1 insuffisant (%d < %d barres) - nouvel essai chaque jour.",
+                     C[i].name, n, MINBARS);
+         C[i].warnHist = true;
+        }
+      C[i].doneBar = bar;                                  // re-essai a la prochaine bougie D1
+      return;
+     }
 
    trade.SetExpertMagicNumber((ulong)C[i].magic);
    trade.SetTypeFillingBySymbol(C[i].sym);
@@ -559,6 +706,7 @@ void Process(const int i, const bool canOpen)
    string why = "";
    if(!EntrySignal(i, r, n, slDist, why))
       return;
+   C[i].nSig++;
 
    double ask = SymbolInfoDouble(C[i].sym, SYMBOL_ASK);
    int    dg  = (int)SymbolInfoInteger(C[i].sym, SYMBOL_DIGITS);
@@ -577,11 +725,12 @@ void Process(const int i, const bool canOpen)
    double riskMoney = InpCapital * C[i].w * K() / 100.0 * sc;
 
    double open = OpenRisk();
-   double dayFloor = GV("DAYBAL") - InpCapital * InpDailyGuardPct / 100.0;
+   double dayFloor = s_dayBal - InpCapital * InpDailyGuardPct / 100.0;
    double maxFloor = InpCapital * (1.0 - InpMaxLossPct / 100.0) + InpCapital * 0.003;
    if(open + riskMoney > InpCapital * InpMaxOpenPct / 100.0 ||
       eq - open - riskMoney <= maxFloor || eq - open - riskMoney <= dayFloor)
      {
+      C[i].nRisk++;
       PrintFormat("%s : signal ignore (plafond de risque). ouvert %.0f + %.0f", C[i].name, open, riskMoney);
       return;
      }
@@ -589,30 +738,40 @@ void Process(const int i, const bool canOpen)
    double lots = LotsFor(C[i].sym, ask, sl, riskMoney);
    if(lots <= 0.0)
      {
+      C[i].nLot++;
       PrintFormat("%s : lot trop petit/marge insuffisante pour risque %.0f$.", C[i].name, riskMoney);
       return;
      }
    if(trade.Buy(lots, C[i].sym, 0.0, sl, tp, C[i].name))
      {
       CountTradingDay();
+      C[i].nTrade++;
       PrintFormat("ACHAT %s %s %.2f lots | SL %s | TP %s | risque %.0f$ | %s",
                   C[i].name, C[i].sym, lots, DoubleToString(sl, dg), DoubleToString(tp, dg), riskMoney, why);
      }
    else
+      C[i].nRefus++;
       PrintFormat("%s : achat refuse %s", C[i].name, trade.ResultRetcodeDescription());
   }
 
 //+------------------------------------------------------------------+
 void Panel()
   {
-   string s = StringFormat("FTMOPortfolio v1.0 | %s | K %.2f\n", EnumToString(InpMode), K());
+   if(g_tester)
+      return;                                  // pas de panneau en test non visuel (vitesse)
+   static uint lastMs = 0;
+   uint ms = GetTickCount();
+   if(ms - lastMs < 2000)
+      return;
+   lastMs = ms;
+   string s = StringFormat("FTMOPortfolio v1.3 | %s | K %.2f\n", EnumToString(InpMode), K());
    double eq = AccountInfoDouble(ACCOUNT_EQUITY);
    s += StringFormat("Equity %.0f (%.2f %%) | jour ref %.0f | jours trading %.0f\n",
-                     eq, (eq / InpCapital - 1.0) * 100.0, GV("DAYBAL"), GV("TDAYS"));
+                     eq, (eq / InpCapital - 1.0) * 100.0, s_dayBal, s_tdays);
    string stat = "ACTIF";
-   if(GV("HDAY") > 0.5) stat = "JOURNEE COUPEE";
-   if(GV("HALL") > 0.5) stat = "ARRET TOTAL";
-   if(GV("DONE") > 0.5) stat = "OBJECTIF ATTEINT";
+   if(s_hday) stat = "JOURNEE COUPEE";
+   if(s_hall) stat = "ARRET TOTAL";
+   if(s_done) stat = "OBJECTIF ATTEINT";
    s += StringFormat("Risque ouvert %.0f $ | Statut: %s\n", OpenRisk(), stat);
    for(int i = 0; i < ArraySize(C); i++)
      {
@@ -632,7 +791,7 @@ void Panel()
 void Run()
   {
    bool ok = Guard();
-   if(GV("DONE") > 0.5 || GV("HALL") > 0.5)
+   if(s_done || s_hall)
      {
       Panel();
       return;

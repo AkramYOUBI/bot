@@ -1,0 +1,26 @@
+RAPPORT OR SEUL (XAUUSD) — 4 briques : cassure 20j TP3R (w1.0), cassure 55j (w0.7), Double-7 (w0.8), momentum 60j hebdo (w0.6)
+Reglages: K challenge 2.0 | garde-fou 3.5% | risque ouvert max 5% | reduction DD 6%
+[BASE] CHALLENGE x2.0: reussite 99.0% | echec 0.0% | median 357j | 75% 1150j | 90% 1411j | <=6 mois 23%
+      reussi  echec  jours_med
+y                             
+2020   100.0    0.0     1425.0
+2021   100.0    0.0     1179.0
+2022   100.0    0.0      329.0
+2023   100.0    0.0      414.0
+2024   100.0    0.0      190.0
+2025    93.0    0.0      152.0
+[BASE] FINANCE x0.75: +493$/mois moyen | mois+ 49% | pire mois -3117 | DD pic 7.4% | pire jour 2175 | {2020: 9364.0, 2021: -1835.0, 2022: 4.0, 2023: 918.0, 2024: 8846.0, 2025: 21116.0, 2026: 2540.0}
+[BASE] FINANCE x1.0: +682$/mois moyen | mois+ 49% | pire mois -3341 | DD pic 9.6% | pire jour 2700 | {2020: 12297.0, 2021: -2446.0, 2022: -144.0, 2023: 2720.0, 2024: 12609.0, 2025: 28154.0, 2026: 3386.0}
+[BASE] FINANCE x1.25: +834$/mois moyen | mois+ 49% | pire mois -4177 | DD pic 12.0% | pire jour 3375 | {2020: 15004.0, 2021: -3058.0, 2022: 111.0, 2023: 2825.0, 2024: 15241.0, 2025: 34874.0, 2026: 4233.0}
+[COUTSx2] CHALLENGE x2.0: reussite 96.7% | echec 0.0% | median 519j | 75% 1288j | 90% 1578j | <=6 mois 19%
+      reussi  echec  jours_med
+y                             
+2020    87.0    0.0     1625.0
+2021   100.0    0.0     1349.0
+2022   100.0    0.0      627.0
+2023   100.0    0.0      433.0
+2024   100.0    0.0      198.0
+2025    93.0    0.0      160.0
+[COUTSx2] FINANCE x0.75: +440$/mois moyen | mois+ 48% | pire mois -2572 | DD pic 9.5% | pire jour 2223 | {2020: 8649.0, 2021: -2297.0, 2022: -516.0, 2023: -175.0, 2024: 8421.0, 2025: 20156.0, 2026: 2297.0}
+[COUTSx2] FINANCE x1.0: +600$/mois moyen | mois+ 48% | pire mois -3429 | DD pic 11.1% | pire jour 2742 | {2020: 11355.0, 2021: -3062.0, 2022: -605.0, 2023: 1332.0, 2024: 10826.0, 2025: 26875.0, 2026: 3062.0}
+[COUTSx2] FINANCE x1.25: +740$/mois moyen | mois+ 48% | pire mois -4287 | DD pic 13.6% | pire jour 3427 | {2020: 13840.0, 2021: -3828.0, 2022: -458.0, 2023: 1146.0, 2024: 13569.0, 2025: 33286.0, 2026: 3828.0}

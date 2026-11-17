@@ -288,3 +288,81 @@ def h1_mr(I: Inst, rsi_n=2, th=5, exit_ma=5, sl=3.0, maxh=24, dtrend=200, hours=
         out.append((res, 1, I.dt[I.bday[k + 1]]))
         busy = int(res[0][-1])
     return out
+
+
+# ---------------------------------------------------------------- 10) Cassure du range asiatique (intraday or)
+def asian_breakout(I: Inst, r_end=8, last_entry=16, close_h=22, sl_mult=1.0, rr=1.5, dtrend=0, both=True, min_rng_atr=0.2, max_rng_atr=1.2):
+    """Range des heures broker [1, r_end) ; cassure (cloture H1) entre r_end et last_entry ; sortie a close_h."""
+    A = atr(I.dh, I.dl, I.dc, 14)
+    DT = sma(I.dc, dtrend) if dtrend else None
+    out = []
+    for d in range(30, len(I.dc) - 1):
+        f, l = int(I.d_first[d]), int(I.d_last[d])
+        hrs = I.hour[f:l + 1]
+        rng_idx = [f + j for j, h in enumerate(hrs) if 1 <= h < r_end]
+        if len(rng_idx) < r_end - 2:
+            continue
+        hi = I.h[rng_idx].max(); lo = I.l[rng_idx].min()
+        a = A[d - 1]
+        if not a > 0 or not (min_rng_atr * a <= hi - lo <= max_rng_atr * a):
+            continue
+        up_ok = DT is None or I.dc[d - 1] > DT[d - 1]
+        dn_ok = DT is None or I.dc[d - 1] < DT[d - 1]
+        flag = np.zeros(len(I.c), bool)
+        for k in range(rng_idx[-1] + 1, l + 1):
+            if I.hour[k] >= close_h:
+                flag[k - 1] = True
+                break
+        else:
+            flag[l] = True
+        for k in range(rng_idx[-1] + 1, l):
+            h = I.hour[k]
+            if h >= last_entry:
+                break
+            side = 1 if (I.c[k] > hi and up_ok) else (-1 if (both and I.c[k] < lo and dn_ok) else 0)
+            if side == 0:
+                continue
+            dist = (hi - lo) * sl_mult
+            res = run_trade(I, k + 1, side, dist, rr, flag, 30)
+            if res is not None:
+                out.append((res, side, I.dt[d]))
+            break
+    return out
+
+
+# ---------------------------------------------------------------- 11) Momentum serie temporelle (hebdo)
+def tsmom(I: Inst, look=60, hold=5, sl=3.0, both=False, ma=0):
+    A = atr(I.dh, I.dl, I.dc, 20)
+    M = sma(I.dc, ma) if ma else None
+    f = np.zeros(len(I.c), bool)
+
+    def sig(d):
+        if d % hold != 0 or not A[d] > 0:
+            return 0
+        r = I.dc[d] / I.dc[d - look] - 1
+        if r > 0 and (M is None or I.dc[d] > M[d]):
+            return 1
+        if both and r < 0 and (M is None or I.dc[d] < M[d]):
+            return -1
+        return 0
+
+    def mk(d, i0, side):
+        return run_trade(I, i0, side, A[d] * sl, 0.0, None, hold * 23)
+
+    return _daily_loop(I, sig, mk, look + 5)
+
+
+# ---------------------------------------------------------------- 12) Momentum hebdo calendaire (signal cloture vendredi)
+def tsmom_w(I: Inst, look=60, sl=3.0, hold_days=4):
+    A = atr(I.dh, I.dl, I.dc, 20)
+    wd = I.dt.weekday.to_numpy()
+
+    def sig(d):
+        if wd[d] != 4 or not A[d] > 0:
+            return 0
+        return 1 if I.dc[d] > I.dc[d - look] else 0
+
+    def mk(d, i0, side):
+        return run_trade(I, i0, side, A[d] * sl, 0.0, None, hold_days * 23 + 12)
+
+    return _daily_loop(I, sig, mk, look + 5)
